@@ -1,125 +1,288 @@
+// import React, { useState, useMemo } from 'react';
+// import { Search, Filter, Edit2, Trash2, Plus } from 'lucide-react';
+
+// export default function Teachers({ userRole, teachers = [] }) {
+//   const [searchQuery, setSearchQuery] = useState('');
+//   const [deptFilter, setDeptFilter] = useState('All Departments');
+//   const isAdmin = userRole === 'admin';
+
+//   // Extract unique departments dynamically
+//   const uniqueDepts = ['All Departments', ...new Set(teachers.map(t => t.dept))];
+
+//   // Live Filtering Logic
+//   const filteredTeachers = useMemo(() => {
+//     return teachers.filter((t) => {
+//       const matchesSearch = 
+//         t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+//         t.id.toLowerCase().includes(searchQuery.toLowerCase());
+//       const matchesDept = deptFilter === 'All Departments' || t.dept === deptFilter;
+//       return matchesSearch && matchesDept;
+//     });
+//   }, [teachers, searchQuery, deptFilter]);
+
+//   return (
+//     <div className="animate-in fade-in duration-500 max-w-full mx-auto p-4 space-y-3 font-sans">
+      
+//       {/* 1. LARGE TITLE / COMPACT HEADER */}
+//       <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+//         <div>
+//           <h2 className="text-3xl font-black tracking-tight text-slate-900 leading-none">Teachers Management</h2>
+//           <p className="text-slate-500 text-[11px] mt-1 font-medium italic">Faculty directory and departmental assignments.</p>
+//         </div>
+//         <button className="flex items-center gap-2 bg-[#136dec] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95">
+//           <Plus size={16} /> Add New Teacher
+//         </button>
+//       </div>
+
+//       {/* 2. ULTRA-COMPACT TOOLBAR */}
+//       <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-3 py-2 flex flex-col md:flex-row gap-3 items-center">
+//         <div className="relative flex-1 w-full group">
+//           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#136dec]" size={14} />
+//           <input 
+//             value={searchQuery}
+//             onChange={(e) => setSearchQuery(e.target.value)}
+//             className="w-full bg-slate-50 border-none rounded-lg py-1.5 pl-9 pr-4 text-[11px] focus:ring-1 focus:ring-[#136dec]/30 text-slate-900 placeholder:text-slate-400 outline-none" 
+//             placeholder="Search faculty..." 
+//             type="text"
+//           />
+//         </div>
+//         <div className="flex gap-2">
+//           <select 
+//             value={deptFilter}
+//             onChange={(e) => setDeptFilter(e.target.value)}
+//             className="bg-slate-50 border-none rounded-lg py-1.5 pl-2 pr-8 text-[11px] text-slate-700 min-w-[140px] cursor-pointer outline-none"
+//           >
+//             {uniqueDepts.map(d => <option key={d} value={d}>{d}</option>)}
+//           </select>
+//           <button className="flex items-center justify-center size-8 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200">
+//             <Filter size={14} />
+//           </button>
+//         </div>
+//       </div>
+
+//       {/* 3. ZERO-WASTE DATA TABLE */}
+//       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+//         <div className="overflow-x-auto">
+//           <table className="w-full text-left border-collapse table-fixed">
+//             <thead>
+//               <tr className="bg-slate-50/80 border-b border-slate-200">
+//                 <th className="w-[28%] px-4 py-2 text-[12px] font-black uppercase tracking-widest text-slate-400">Name & ID</th>
+//                 <th className="w-[18%] px-4 py-2 text-[12px] font-black uppercase tracking-widest text-slate-400">Department</th>
+//                 <th className="w-[18%] px-4 py-2 text-[12px] font-black uppercase tracking-widest text-slate-400">Subject</th>
+//                 <th className="w-[22%] px-4 py-2 text-[12px] font-black uppercase tracking-widest text-slate-400">Email</th>
+//                 <th className="w-[14%] px-4 py-2 text-[12px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+//               </tr>
+//             </thead>
+//             <tbody className="divide-y divide-slate-100">
+//               {filteredTeachers.map((teacher) => (
+//                 <tr key={teacher.id} className="hover:bg-slate-50/50 transition-colors group">
+//                   <td className="px-4 py-1.5">
+//                     <div className="flex items-center gap-2">
+//                       <div className="size-7 rounded-full bg-[#136dec]/5 flex items-center justify-center text-[10px] font-black text-[#136dec] border border-[#136dec]/10">
+//                         {teacher.initial || 'TR'}
+//                       </div>
+//                       <div className="flex flex-col truncate">
+//                         <span className="text-[11px] font-bold text-slate-900 leading-tight truncate">{teacher.name}</span>
+//                         <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">ID: {teacher.id}</span>
+//                       </div>
+//                     </div>
+//                   </td>
+//                   <td className="px-4 py-1.5">
+//                     <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-blue-50 text-blue-600 border border-blue-100">
+//                       {teacher.dept}
+//                     </span>
+//                   </td>
+//                   <td className="px-4 py-1.5 text-[11px] font-medium text-slate-600 truncate">{teacher.subject || '—'}</td>
+//                   <td className="px-4 py-1.5 text-[11px] font-medium text-slate-400 lowercase truncate">{teacher.email || '—'}</td>
+//                   <td className="px-4 py-1.5 text-right">
+//                     <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+//                       <button className="p-1 hover:bg-white rounded text-slate-400 hover:text-[#136dec] border border-transparent hover:border-slate-200 transition-all">
+//                         <Edit2 size={12} />
+//                       </button>
+//                       {isAdmin && (
+//                         <button className="p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-600 transition-all">
+//                           <Trash2 size={12} />
+//                         </button>
+//                       )}
+//                     </div>
+//                   </td>
+//                 </tr>
+//               ))}
+//             </tbody>
+//           </table>
+//         </div>
+
+//         {/* 4. LOW-PROFILE FOOTER */}
+//         <div className="px-4 py-1.5 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between">
+//           <span className="text-[10px] text-slate-400 font-bold uppercase">
+//             Records: {filteredTeachers.length}
+//           </span>
+//           <div className="flex items-center gap-1">
+//             <button className="px-2 py-0.5 text-[10px] font-bold bg-white border border-slate-200 rounded text-slate-500 hover:bg-slate-50">Prev</button>
+//             <button className="px-2 py-0.5 text-[10px] font-bold bg-white border border-slate-200 rounded text-slate-500 hover:bg-slate-50">Next</button>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, Edit2, Trash2, Plus } from 'lucide-react';
+// import { Search, Filter, Edit2, Trash2, Plus } from 'lucide-react';
+import { Search, Filter, Edit2, Trash2, Plus, Users } from 'lucide-react';
 
 export default function Teachers({ userRole, teachers = [] }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [deptFilter, setDeptFilter] = useState('All Departments');
   const isAdmin = userRole === 'admin';
 
-  // Extract unique departments dynamically
-  const uniqueDepts = ['All Departments', ...new Set(teachers.map(t => t.dept))];
+  // Extract unique departments safely
+  const uniqueDepts = useMemo(() => {
+    const depts = teachers
+      .map((t) => t?.dept || t?.department) // Handle different column names
+      .filter(Boolean); // Remove null/undefined
+    return ['All Departments', ...new Set(depts)];
+  }, [teachers]);
 
-  // Live Filtering Logic
+  // SAFE Filtering Logic to prevent toLowerCase() errors
   const filteredTeachers = useMemo(() => {
     return teachers.filter((t) => {
-      const matchesSearch = 
-        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.id.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesDept = deptFilter === 'All Departments' || t.dept === deptFilter;
+      // 1. Safe Property Access
+      const name = (t?.teacherName || t?.name || "").toString().toLowerCase();
+      const id = (t?.id || t?.employeeId || "").toString().toLowerCase();
+      const dept = (t?.dept || t?.department || "").toString();
+      const search = searchQuery.toLowerCase();
+
+      // 2. Matching Logic
+      const matchesSearch = name.includes(search) || id.includes(search);
+      const matchesDept = deptFilter === 'All Departments' || dept === deptFilter;
+
       return matchesSearch && matchesDept;
     });
   }, [teachers, searchQuery, deptFilter]);
 
   return (
-    <div className="animate-in fade-in duration-500 max-w-full mx-auto p-4 space-y-3 font-sans">
+    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-full mx-auto p-4 space-y-4 font-sans">
       
-      {/* 1. LARGE TITLE / COMPACT HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+      {/* 1. HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-slate-900 leading-none">Teachers Management</h2>
-          <p className="text-slate-500 text-[11px] mt-1 font-medium italic">Faculty directory and departmental assignments.</p>
+          <p className="text-slate-500 text-[11px] mt-1 font-medium italic">Faculty directory and active departmental assignments.</p>
         </div>
         <button className="flex items-center gap-2 bg-[#136dec] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95">
           <Plus size={16} /> Add New Teacher
         </button>
       </div>
 
-      {/* 2. ULTRA-COMPACT TOOLBAR */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-3 py-2 flex flex-col md:flex-row gap-3 items-center">
+      {/* 2. SEARCH & FILTER TOOLBAR */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3 flex flex-col md:flex-row gap-3 items-center">
         <div className="relative flex-1 w-full group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#136dec]" size={14} />
           <input 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 border-none rounded-lg py-1.5 pl-9 pr-4 text-[11px] focus:ring-1 focus:ring-[#136dec]/30 text-slate-900 placeholder:text-slate-400 outline-none" 
-            placeholder="Search faculty..." 
+            className="w-full bg-slate-50 border-none rounded-xl py-2 pl-10 pr-4 text-[12px] focus:ring-2 focus:ring-[#136dec]/20 text-slate-900 placeholder:text-slate-400 outline-none transition-all" 
+            placeholder="Search by name or employee ID..." 
             type="text"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full md:w-auto">
           <select 
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
-            className="bg-slate-50 border-none rounded-lg py-1.5 pl-2 pr-8 text-[11px] text-slate-700 min-w-[140px] cursor-pointer outline-none"
+            className="flex-1 md:flex-none bg-slate-50 border-none rounded-xl py-2 pl-3 pr-10 text-[12px] text-slate-700 min-w-[160px] cursor-pointer outline-none focus:ring-2 focus:ring-[#136dec]/20"
           >
             {uniqueDepts.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
-          <button className="flex items-center justify-center size-8 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200">
-            <Filter size={14} />
+          <button className="flex items-center justify-center size-10 bg-slate-100 rounded-xl text-slate-600 hover:bg-slate-200 transition-colors">
+            <Filter size={16} />
           </button>
         </div>
       </div>
 
-      {/* 3. ZERO-WASTE DATA TABLE */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* 3. DATA TABLE */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse table-fixed">
+          <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200">
-                <th className="w-[28%] px-4 py-2 text-[12px] font-black uppercase tracking-widest text-slate-400">Name & ID</th>
-                <th className="w-[18%] px-4 py-2 text-[12px] font-black uppercase tracking-widest text-slate-400">Department</th>
-                <th className="w-[18%] px-4 py-2 text-[12px] font-black uppercase tracking-widest text-slate-400">Subject</th>
-                <th className="w-[22%] px-4 py-2 text-[12px] font-black uppercase tracking-widest text-slate-400">Email</th>
-                <th className="w-[14%] px-4 py-2 text-[12px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400">Faculty Member</th>
+                <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400">Department</th>
+                <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400">Designation</th>
+                <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400">Contact</th>
+                <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredTeachers.map((teacher) => (
-                <tr key={teacher.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-4 py-1.5">
-                    <div className="flex items-center gap-2">
-                      <div className="size-7 rounded-full bg-[#136dec]/5 flex items-center justify-center text-[10px] font-black text-[#136dec] border border-[#136dec]/10">
-                        {teacher.initial || 'TR'}
+              {filteredTeachers.length > 0 ? (
+                filteredTeachers.map((teacher) => (
+                  <tr key={teacher.id || Math.random()} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="size-9 rounded-xl bg-[#136dec]/10 flex items-center justify-center text-[12px] font-black text-[#136dec] border border-[#136dec]/10 shadow-sm">
+                          {(teacher.teacherName || teacher.name || "T").charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[13px] font-bold text-slate-900 leading-tight">
+                            {teacher.teacherName || teacher.name}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                            ID: {teacher.id || teacher.employeeId || 'N/A'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col truncate">
-                        <span className="text-[11px] font-bold text-slate-900 leading-tight truncate">{teacher.name}</span>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">ID: {teacher.id}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-1.5">
-                    <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-blue-50 text-blue-600 border border-blue-100">
-                      {teacher.dept}
-                    </span>
-                  </td>
-                  <td className="px-4 py-1.5 text-[11px] font-medium text-slate-600 truncate">{teacher.subject || '—'}</td>
-                  <td className="px-4 py-1.5 text-[11px] font-medium text-slate-400 lowercase truncate">{teacher.email || '—'}</td>
-                  <td className="px-4 py-1.5 text-right">
-                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-1 hover:bg-white rounded text-slate-400 hover:text-[#136dec] border border-transparent hover:border-slate-200 transition-all">
-                        <Edit2 size={12} />
-                      </button>
-                      {isAdmin && (
-                        <button className="p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-600 transition-all">
-                          <Trash2 size={12} />
+                    </td>
+                    <td className="px-6 py-3">
+                      <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-blue-50 text-blue-600 border border-blue-100">
+                        {teacher.dept || teacher.department || 'General'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3 text-[12px] font-medium text-slate-600">
+                      {teacher.designation || 'Lecturer'}
+                    </td>
+                    <td className="px-6 py-3 text-[12px] font-medium text-slate-400 lowercase">
+                      {teacher.email || '—'}
+                    </td>
+                    <td className="px-6 py-3 text-right">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                        <button className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-[#136dec] border border-transparent hover:border-slate-200 shadow-sm transition-all">
+                          <Edit2 size={14} />
                         </button>
-                      )}
+                        {isAdmin && (
+                          <button className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600 border border-transparent hover:border-red-100 transition-all">
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center justify-center opacity-30">
+                      <Users size={48} className="mb-4" />
+                      <p className="text-sm font-bold uppercase tracking-widest">No matching faculty found</p>
                     </div>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* 4. LOW-PROFILE FOOTER */}
-        <div className="px-4 py-1.5 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between">
-          <span className="text-[10px] text-slate-400 font-bold uppercase">
-            Records: {filteredTeachers.length}
+        {/* 4. FOOTER */}
+        <div className="px-6 py-3 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+          <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+            Showing {filteredTeachers.length} of {teachers.length} Faculty
           </span>
-          <div className="flex items-center gap-1">
-            <button className="px-2 py-0.5 text-[10px] font-bold bg-white border border-slate-200 rounded text-slate-500 hover:bg-slate-50">Prev</button>
-            <button className="px-2 py-0.5 text-[10px] font-bold bg-white border border-slate-200 rounded text-slate-500 hover:bg-slate-50">Next</button>
+          <div className="flex items-center gap-2">
+            <button className="px-3 py-1 text-[10px] font-black uppercase bg-white border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 transition-colors">Prev</button>
+            <button className="px-3 py-1 text-[10px] font-black uppercase bg-white border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 transition-colors">Next</button>
           </div>
         </div>
       </div>
