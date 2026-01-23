@@ -1,24 +1,26 @@
-
-
-
 import React, { useState } from 'react';
 import { Plus, ArrowLeft, LayoutGrid } from 'lucide-react';
 import StudentBatchCard from '../components/students/StudentBatchCard';
 import StudentListTable from '../components/students/StudentListTable';
 
-// FIX: Added "= []" to batches and allStudents to prevent the map error
-export default function Students({ userRole, batches = [], allStudents = [], onAddBatch, onAddStudent }) {
+export default function Students({ 
+  userRole, 
+  batches = [], 
+  allStudents = [], 
+  onAddBatch, 
+  onAddStudent,
+  onDeleteStudent // Received from App.js
+}) {
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [activeFilter, setActiveFilter] = useState('All');
   const isAdmin = userRole === 'admin';
 
-  // Dynamic filter options
   const filterOptions = ['All', ...new Set(batches.map(b => b.dept))];
   const filteredBatches = activeFilter === 'All' ? batches : batches.filter(b => b.dept === activeFilter);
 
   return (
     <div className="max-w-7xl mx-auto p-8 animate-in fade-in duration-500">
-      <div className="mb-10">
+      <div className="mb-10 text-left">
         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
           <LayoutGrid size={12} /> Dashboard / <span className="text-blue-600">Students</span>
         </div>
@@ -29,7 +31,7 @@ export default function Students({ userRole, batches = [], allStudents = [], onA
       {!selectedBatch ? (
         <div className="space-y-10">
           {isAdmin && (
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm border-t-4 border-t-blue-600">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm border-t-4 border-t-blue-600 text-left">
               <h3 className="font-bold text-xs text-slate-400 uppercase tracking-wider mb-4">Register New Batch</h3>
               <form onSubmit={(e) => {
                 e.preventDefault();
@@ -52,7 +54,7 @@ export default function Students({ userRole, batches = [], allStudents = [], onA
           )}
 
           <div className="flex justify-between items-center border-b border-slate-100 pb-6">
-            <h3 className="font-black text-xl">Batch Management</h3>
+            <h3 className="font-black text-xl text-slate-900">Batch Management</h3>
             <div className="flex bg-slate-100 p-1.5 rounded-2xl gap-1 border border-slate-200">
               {filterOptions.map(f => (
                 <button key={f} onClick={() => setActiveFilter(f)} className={`px-6 py-2 text-xs font-black rounded-xl transition-all ${activeFilter === f ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500'}`}>{f}</button>
@@ -73,8 +75,10 @@ export default function Students({ userRole, batches = [], allStudents = [], onA
           </button>
           <StudentListTable 
             batch={selectedBatch} 
-            students={allStudents.filter(s => s.batchId === selectedBatch.id)} 
+            // Ensures filtering works even if IDs are stored as strings in DB but numbers in JS
+            students={allStudents.filter(s => String(s.batchId) === String(selectedBatch.id))} 
             onAddStudent={onAddStudent} 
+            onDeleteStudent={onDeleteStudent} // Crucial link
             isAdmin={isAdmin} 
           />
         </div>
@@ -84,8 +88,8 @@ export default function Students({ userRole, batches = [], allStudents = [], onA
 }
 
 const FormGroup = ({ label, name, placeholder }) => (
-  <div className="space-y-2">
+  <div className="space-y-2 text-left">
     <label className="text-[10px] font-black text-slate-400 uppercase">{label}</label>
-    <input name={name} placeholder={placeholder} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-100 transition font-medium" required />
+    <input name={name} placeholder={placeholder} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-100 transition font-medium text-slate-900" required />
   </div>
 );
