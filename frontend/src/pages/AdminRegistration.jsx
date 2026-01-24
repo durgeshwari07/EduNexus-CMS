@@ -1,5 +1,3 @@
-// 
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -39,6 +37,8 @@ function FloatingInput({ label, name, type = "text", required = false }) {
 
 export default function AdminRegistration({ onRegister }) {
   const navigate = useNavigate();
+
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
