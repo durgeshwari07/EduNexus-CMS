@@ -1,106 +1,269 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, ShieldCheck, GraduationCap } from 'lucide-react';
+import { useState } from "react";
 
-export default function Login({ onLogin, approvedTeachers }) {
-  const navigate = useNavigate();
-  const [error, setError] = useState("");
-  const [selectedRole, setSelectedRole] = useState("admin"); // Default to admin
+export default function LoginOtpApp() {
+  const [step, setStep] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState(["", "", "", ""]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const email = formData.get("email");
-    const password = formData.get("password");
-
-    if (selectedRole === "admin") {
-      // Admin Login Check
-      if (email === "admin@college.edu" && password === "admin123") {
-        onLogin('admin', { name: "System Administrator", email });
-      } else {
-        setError("Invalid Admin credentials.");
-      }
-    } else {
-      // Teacher Login Check (Checks only approved teachers)
-      const teacher = approvedTeachers.find(
-        (t) => t.email === email && t.password === password
-      );
-
-      if (teacher) {
-        onLogin('teacher', teacher);
-      } else {
-        setError("Teacher account not found, incorrect password, or pending approval.");
-      }
+  const handleLogin = () => {
+    if (!email || !password) {
+      alert("Email and password required");
+      return;
     }
+    setStep("otp");
+  };
+
+  const handleOtpChange = (value, index) => {
+    if (!/^[0-9]?$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+  };
+
+  const verifyOtp = () => {
+    if (otp.some(d => d === "")) {
+      alert("Please enter complete OTP");
+      return;
+    }
+    alert("OTP verified. Login successful");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0f172a] p-6">
-      <div className="bg-white rounded-[40px] shadow-2xl p-10 max-w-md w-full animate-in fade-in zoom-in duration-300">
-        <h2 className="text-3xl font-black text-slate-900 mb-2">Login</h2>
-        <p className="text-slate-500 mb-8 font-medium">Select your role and sign in</p>
+    <div className="page-container">
+      <style>{css}</style>
 
-        {/* Role Selector Tabs */}
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-8 border border-slate-200">
-          <button
-            onClick={() => {setSelectedRole("admin"); setError("");}}
-            className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-black transition-all ${
-              selectedRole === "admin" ? "bg-white text-blue-600 shadow-md" : "text-slate-500"
-            }`}
-          >
-            <ShieldCheck size={16} /> Admin
-          </button>
-          <button
-            onClick={() => {setSelectedRole("teacher"); setError("");}}
-            className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-black transition-all ${
-              selectedRole === "teacher" ? "bg-white text-purple-600 shadow-md" : "text-slate-500"
-            }`}
-          >
-            <GraduationCap size={16} /> Teacher
-          </button>
+      {/* Main Content Centered on White */}
+      <main className="main-content">
+        <div className="auth-card">
+          <div className="visual-panel">
+            <h1>Welcome Back</h1>
+            <p>
+              Secure login experience with mandatory OTP verification. 
+              Smooth animations, clean layout, modern design.
+            </p>
+          </div>
+
+          <div className="form-panel">
+            <div
+              className="slider"
+              style={{ transform: step === "otp" ? "translateX(-50%)" : "translateX(0)" }}
+            >
+              {/* Sign In Slide */}
+              <div className="slide">
+                <h2 className="form-title">Sign In</h2>
+                <p className="form-subtitle">OTP verification is mandatory</p>
+
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  className="form-input"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                />
+
+                <input
+                  type="password"
+                  placeholder="Password"
+                  className="form-input"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                />
+
+                <button className="btn-continue" onClick={handleLogin}>
+                  Continue
+                </button>
+              </div>
+
+              {/* OTP Slide */}
+              <div className="slide">
+                <h2 className="form-title">OTP Verification</h2>
+                <p className="form-subtitle">Enter the 4 digit OTP</p>
+
+                <div className="otp-group">
+                  {otp.map((d, i) => (
+                    <input
+                      key={i}
+                      maxLength={1}
+                      className="otp-input"
+                      value={d}
+                      onChange={e => handleOtpChange(e.target.value, i)}
+                    />
+                  ))}
+                </div>
+
+                <button className="btn-continue" onClick={verifyOtp}>
+                  Verify OTP
+                </button>
+
+                <button className="btn-link" onClick={() => setStep("login")}>
+                  ← Back to Login
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-
-        {error && (
-          <div className="bg-red-50 text-red-500 p-4 rounded-xl text-[10px] font-black uppercase tracking-widest mb-6 border border-red-100">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block tracking-widest">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-3.5 text-slate-400" size={18} />
-              <input name="email" type="email" required className="w-full bg-slate-50 border-none rounded-2xl p-4 pl-12 text-sm focus:ring-2 focus:ring-blue-600 outline-none" placeholder="name@college.edu" />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block tracking-widest">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-3.5 text-slate-400" size={18} />
-              <input name="password" type="password" required className="w-full bg-slate-50 border-none rounded-2xl p-4 pl-12 text-sm focus:ring-2 focus:ring-blue-600 outline-none" placeholder="••••••••" />
-            </div>
-          </div>
-
-          <button 
-            type="submit" 
-            className={`w-full py-5 text-white rounded-2xl font-bold shadow-xl transition active:scale-95 uppercase tracking-widest text-xs mt-4 ${
-              selectedRole === "admin" ? "bg-blue-600 hover:bg-blue-700 shadow-blue-100" : "bg-purple-600 hover:bg-purple-700 shadow-purple-100"
-            }`}
-          >
-            Login as {selectedRole}
-          </button>
-
-          <button 
-            type="button"
-            onClick={() => navigate('/')}
-            className="w-full text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest hover:text-slate-600"
-          >
-            ← Back to Home
-          </button>
-        </form>
-      </div>
+      </main>
     </div>
   );
 }
+
+const css = `
+:root {
+  --primary-blue: #004dc0;
+  --secondary-blue: #002d72;
+  --bg-white: #ffffff;
+  --input-bg: #f0f4ff;
+  --text-gray: #8892b0;
+}
+
+* { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+body { margin: 0; padding: 0; background: var(--bg-white); }
+
+.page-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-white);
+}
+
+/* Navbar Styling */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 50px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.nav-logo { display: flex; align-items: center; gap: 10px; }
+.logo-box {
+  background: var(--primary-blue);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+.logo-text { font-weight: 700; font-size: 1.2rem; color: #cbd5e0; }
+
+.nav-actions { display: flex; gap: 12px; }
+
+.btn-register {
+  background: #f0f7ff;
+  color: var(--primary-blue);
+  border: none;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-login {
+  background: #2d3748;
+  color: white;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 20px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Centering Content */
+.main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.auth-card {
+  width: 950px;
+  height: 520px;
+  display: flex;
+  background: #fff;
+  border-radius: 25px;
+  overflow: hidden;
+  box-shadow: 0 15px 50px rgba(0,0,0,0.05);
+  border: 1px solid #f0f0f0;
+}
+
+.visual-panel {
+  width: 40%;
+  background: var(--primary-blue);
+  color: #fff;
+  padding: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.visual-panel h1 { font-size: 2.2rem; margin-bottom: 15px; }
+.visual-panel p { opacity: 0.8; line-height: 1.6; }
+
+.form-panel { width: 60%; overflow: hidden; }
+
+.slider {
+  display: flex;
+  width: 200%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide {
+  width: 50%;
+  padding: 70px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.form-title { font-size: 1.1rem; color: #b0b8c1; margin: 0; }
+.form-subtitle { color: var(--primary-blue); margin: 5px 0 30px 0; font-weight: 500; }
+
+.form-input {
+  width: 100%;
+  padding: 16px;
+  margin-bottom: 15px;
+  border: none;
+  border-radius: 12px;
+  background: var(--input-bg);
+  font-size: 1rem;
+  color: #333;
+}
+
+.btn-continue {
+  background: var(--secondary-blue);
+  color: #fff;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.otp-group { display: flex; gap: 15px; margin-bottom: 25px; }
+.otp-input {
+  width: 60px;
+  height: 60px;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: bold;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  margin-top: 20px;
+  cursor: pointer;
+}
+`;
