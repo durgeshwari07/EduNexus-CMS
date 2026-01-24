@@ -1,28 +1,3 @@
-// // /** @type {import('tailwindcss').Config} */
-// // module.exports = {
-// //   content: ["./src/**/*.{js,jsx}"],
-// //   theme: {
-// //     extend: {},
-// //   },
-// //   plugins: [],
-// // };
-
-// /** @type {import('tailwindcss').Config} */
-// module.exports = {
-//   content: ["./src/**/*.{js,jsx}"],
-//   theme: {
-//     extend: {
-//       fontFamily: {
-//         // This extends the default 'sans' font family
-//         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
-//       },
-//     },
-//   },
-//   plugins: [],
-// };
-
-
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./src/**/*.{js,jsx}"],
@@ -42,3 +17,5 @@ module.exports = {
   },
   plugins: [],
 };
+
+
