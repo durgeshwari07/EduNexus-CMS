@@ -1,7 +1,11 @@
+
+
 import React from 'react';
-import { LayoutDashboard, Building2, Users, GraduationCap, FileText, BarChart3, Settings, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
+import { LayoutDashboard, Building2, Users, GraduationCap, FileText, BarChart3, Settings, LogOut, ExternalLink } from 'lucide-react';
 
 export default function Sidebar({ userRole, currentPage, setCurrentPage, onLogout }) {
+  const navigate = useNavigate(); // 2. Initialize Hook
   const isAdmin = userRole === 'admin';
 
   const menuItems = [
@@ -43,18 +47,39 @@ export default function Sidebar({ userRole, currentPage, setCurrentPage, onLogou
           })}
         </nav>
       </div>
+      
       <div className="mt-auto p-6 border-t border-slate-100">
+        
+        {/* --- ADDED: PORTAL LINK --- */}
+        <div className="mb-4 space-y-1">
+           {/* <button 
+             onClick={() => navigate('/student-portal')} 
+             className="flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 w-full text-sm font-medium rounded-lg transition-all"
+           >
+             <ExternalLink size={18}/> Student Portal
+           </button> */}
+           
+           <button 
+             onClick={() => navigate('/faculty')} 
+             className="flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 w-full text-sm font-medium rounded-lg transition-all"
+           >
+             <ExternalLink size={18}/> Faculty Portal
+           </button>
+        </div>
+        {/* ------------------------- */}
+
         <div className="bg-emerald-50 text-emerald-600 px-3 py-2 rounded-lg text-[10px] font-bold uppercase mb-4 flex items-center gap-2">
           <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span> SYSTEM ONLINE
         </div>
-        <button className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-[#136dec] w-full text-sm font-medium"><Settings size={18}/> Settings</button>
-        <button onClick={onLogout} className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-red-500 w-full text-sm font-medium"><LogOut size={18}/> Logout</button>
+        
+        <button className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-[#136dec] w-full text-sm font-medium">
+          <Settings size={18}/> Settings
+        </button>
+        
+        <button onClick={onLogout} className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-red-500 w-full text-sm font-medium">
+          <LogOut size={18}/> Logout
+        </button>
       </div>
     </aside>
   );
 }
-
-
-
-
-
