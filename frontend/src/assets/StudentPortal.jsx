@@ -657,6 +657,11 @@
 
 
 
+
+
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -669,6 +674,7 @@ import './Portal.css';
 
 const StudentPortal = () => {
   const navigate = useNavigate();
+  // FIXED: useParams must be called inside the component
   const { id } = useParams();
   const fileInputRef = useRef(null); 
   
@@ -680,6 +686,7 @@ const StudentPortal = () => {
   const fetchPortalData = async () => {
     try {
       setLoading(true);
+      // Ensure your backend has the /portal route or change this to /api/students/${id}
       const res = await axios.get(`http://localhost:5000/api/students/${id}/portal`);
       if (res.data) {
         setProfile(res.data.profile);
@@ -692,10 +699,16 @@ const StudentPortal = () => {
         }, {});
         setMarksBySemester(grouped);
       }
-    } catch (err) { console.error(err); } finally { setLoading(false); }
+    } catch (err) { 
+      console.error("Fetch error:", err); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
-  useEffect(() => { if (id) fetchPortalData(); }, [id]);
+  useEffect(() => { 
+    if (id) fetchPortalData(); 
+  }, [id]);
 
   const handleUploadClick = () => { fileInputRef.current.click(); };
 
@@ -709,7 +722,11 @@ const StudentPortal = () => {
       });
       alert("Document Uploaded Successfully!");
       fetchPortalData(); 
-    } catch (err) { alert("Upload failed."); } finally { setLoading(false); }
+    } catch (err) { 
+      alert("Upload failed."); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const processAcademicRow = (mark) => {
@@ -731,7 +748,7 @@ const StudentPortal = () => {
     <div className="min-h-screen bg-[#f8fafc] pb-12 portal-theme">
       <div className="max-w-7xl mx-auto px-4 py-8">
         
-        {/* --- SECTION 1: HERO HEADER (Matches Image) --- */}
+        {/* --- SECTION 1: HERO HEADER --- */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
           <div className="flex flex-col md:flex-row gap-8 items-start">
             <div className="flex-shrink-0">
@@ -835,7 +852,6 @@ const StudentPortal = () => {
           ))}
         </div>
 
-       
         {/* --- SECTION 4: LIVE DOCUMENTS GRID --- */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
           <div className="flex items-center justify-between mb-8">
@@ -844,7 +860,7 @@ const StudentPortal = () => {
               <h2 className="text-2xl font-semibold text-slate-900">Student Documents</h2>
             </div>
             <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} />
-            <button className="btn btn-primary flex items-center gap-2" onClick={handleUploadClick}><Upload size={16}/> Upload From PC</button>
+            <button className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg font-bold" onClick={handleUploadClick}><Upload size={16}/> Upload From PC</button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -875,7 +891,6 @@ const StudentPortal = () => {
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

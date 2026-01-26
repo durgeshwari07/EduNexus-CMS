@@ -1,17 +1,40 @@
 import { useState } from "react";
+import axios from "axios";
 
-export default function LoginOtpApp() {
+export default function LoginOtpApp({ onLoginSuccess }) {
   const [step, setStep] = useState("login");
+  const [role, setRole] = useState("admin"); 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState(["", "", "", ""]);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  // --- 1. HANDLE INITIAL LOGIN (Credential Check & OTP Request) ---
+  const handleLogin = async () => {
     if (!email || !password) {
       alert("Email and password required");
       return;
     }
-    setStep("otp");
+
+    setLoading(true);
+    try {
+      // Normalizing email to lowercase to match backend normalization
+      const response = await axios.post("http://localhost:5000/api/auth/request-otp", {
+        email: email.toLowerCase(),
+        password,
+        role
+      });
+
+      if (response.data.success) {
+        alert("OTP has been sent to your registered email.");
+        setStep("otp");
+      }
+    } catch (err) {
+      // Handles both "Invalid Credentials" and "Teacher Pending Approval" status
+      alert(err.response?.data?.message || "Invalid credentials for selected role");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOtpChange = (value, index) => {
@@ -19,28 +42,49 @@ export default function LoginOtpApp() {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+
+    // Auto-focus logic for the 4-digit input group
+    if (value && index < 3) {
+      const nextInput = document.querySelectorAll('.otp-input')[index + 1];
+      if (nextInput) nextInput.focus();
+    }
   };
 
-  const verifyOtp = () => {
-    if (otp.some(d => d === "")) {
+  // --- 2. VERIFY OTP & COMPLETE LOGIN ---
+  const verifyOtp = async () => {
+    const otpString = otp.join("");
+    if (otpString.length < 4) {
       alert("Please enter complete OTP");
       return;
     }
-    alert("OTP verified. Login successful");
+
+    try {
+      const response = await axios.post("http://localhost:5000/api/auth/verify-otp", {
+        email: email.toLowerCase(), // Must match the lowercase email used in step 1
+        otp: otpString
+      });
+
+      if (response.data.success) {
+        alert("Verification successful!");
+        // Passes role and user data (including username) to App.js for redirection
+        onLoginSuccess(response.data.role, response.data.user);
+      }
+    } catch (err) {
+      alert("Invalid OTP code. Please try again.");
+    }
   };
 
   return (
     <div className="page-container">
       <style>{css}</style>
 
-      {/* Main Content Centered on White */}
       <main className="main-content">
         <div className="auth-card">
           <div className="visual-panel">
-            <h1>Welcome Back</h1>
+            <h1>Institutional Access</h1>
             <p>
-              Secure login experience with mandatory OTP verification. 
-              Smooth animations, clean layout, modern design.
+              Welcome to the CMS Portal. Please verify your credentials and 
+              complete the secondary email authentication to access your dashboard.
             </p>
           </div>
 
@@ -49,10 +93,21 @@ export default function LoginOtpApp() {
               className="slider"
               style={{ transform: step === "otp" ? "translateX(-50%)" : "translateX(0)" }}
             >
-              {/* Sign In Slide */}
+              {/* Slide 1: Sign In */}
               <div className="slide">
-                <h2 className="form-title">Sign In</h2>
-                <p className="form-subtitle">OTP verification is mandatory</p>
+                <h2 className="form-title">Secure Sign In</h2>
+                <p className="form-subtitle">Choose your access level</p>
+
+                <div className="role-selector">
+                    <button 
+                      className={role === 'admin' ? 'active' : ''} 
+                      onClick={() => setRole('admin')}
+                    >Admin</button>
+                    <button 
+                      className={role === 'teacher' ? 'active' : ''} 
+                      onClick={() => setRole('teacher')}
+                    >Teacher</button>
+                </div>
 
                 <input
                   type="email"
@@ -70,15 +125,15 @@ export default function LoginOtpApp() {
                   onChange={e => setPassword(e.target.value)}
                 />
 
-                <button className="btn-continue" onClick={handleLogin}>
-                  Continue
+                <button className="btn-continue" onClick={handleLogin} disabled={loading}>
+                  {loading ? "Processing..." : "Continue"}
                 </button>
               </div>
 
-              {/* OTP Slide */}
+              {/* Slide 2: OTP Verification */}
               <div className="slide">
-                <h2 className="form-title">OTP Verification</h2>
-                <p className="form-subtitle">Enter the 4 digit OTP</p>
+                <h2 className="form-title">Check Your Email</h2>
+                <p className="form-subtitle">Enter the 4 digit OTP sent to you</p>
 
                 <div className="otp-group">
                   {otp.map((d, i) => (
@@ -93,7 +148,7 @@ export default function LoginOtpApp() {
                 </div>
 
                 <button className="btn-continue" onClick={verifyOtp}>
-                  Verify OTP
+                  Verify & Access Dashboard
                 </button>
 
                 <button className="btn-link" onClick={() => setStep("login")}>
@@ -127,53 +182,6 @@ body { margin: 0; padding: 0; background: var(--bg-white); }
   background: var(--bg-white);
 }
 
-/* Navbar Styling */
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 50px;
-  background: #fff;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.nav-logo { display: flex; align-items: center; gap: 10px; }
-.logo-box {
-  background: var(--primary-blue);
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-}
-.logo-text { font-weight: 700; font-size: 1.2rem; color: #cbd5e0; }
-
-.nav-actions { display: flex; gap: 12px; }
-
-.btn-register {
-  background: #f0f7ff;
-  color: var(--primary-blue);
-  border: none;
-  padding: 8px 18px;
-  border-radius: 20px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.btn-login {
-  background: #2d3748;
-  color: white;
-  border: none;
-  padding: 8px 24px;
-  border-radius: 20px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-/* Centering Content */
 .main-content {
   flex: 1;
   display: flex;
@@ -222,8 +230,31 @@ body { margin: 0; padding: 0; background: var(--bg-white); }
   justify-content: center;
 }
 
+.role-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.role-selector button {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.role-selector button.active {
+    background: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+}
+
 .form-title { font-size: 1.1rem; color: #b0b8c1; margin: 0; }
-.form-subtitle { color: var(--primary-blue); margin: 5px 0 30px 0; font-weight: 500; }
+.form-subtitle { color: var(--primary-blue); margin: 5px 0 20px 0; font-weight: 500; }
 
 .form-input {
   width: 100%;
@@ -248,6 +279,8 @@ body { margin: 0; padding: 0; background: var(--bg-white); }
   margin-top: 10px;
 }
 
+.btn-continue:disabled { opacity: 0.6; cursor: not-allowed; }
+
 .otp-group { display: flex; gap: 15px; margin-bottom: 25px; }
 .otp-input {
   width: 60px;
@@ -257,6 +290,7 @@ body { margin: 0; padding: 0; background: var(--bg-white); }
   font-weight: bold;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
+  background: var(--input-bg);
 }
 
 .btn-link {

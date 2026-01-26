@@ -1,17 +1,19 @@
-
-
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
-import { LayoutDashboard, Building2, Users, GraduationCap, FileText, BarChart3, Settings, LogOut, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  LayoutDashboard, Building2, Users, GraduationCap, 
+  FileText, BarChart3, Settings, LogOut, ExternalLink, BookOpen 
+} from 'lucide-react';
 
-export default function Sidebar({ userRole, currentPage, setCurrentPage, onLogout }) {
-  const navigate = useNavigate(); // 2. Initialize Hook
+export default function Sidebar({ userRole, currentUser, currentPage, setCurrentPage, onLogout }) {
+  const navigate = useNavigate();
   const isAdmin = userRole === 'admin';
 
+  // Define menu items for the main navigation
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, adminOnly: false },
     { id: 'departments', label: 'Departments', icon: Building2, adminOnly: false },
-    { id: 'teachers', label: 'Teachers', icon: Users, adminOnly: true },
+    { id: 'teachers', label: 'Teachers', icon: Users, adminOnly: false }, // Teachers can now view colleagues
     { id: 'subjects', label: 'Subjects', icon: FileText, adminOnly: false },
     { id: 'students', label: 'Students', icon: GraduationCap, adminOnly: false },
     { id: 'documents', label: 'Documents', icon: FileText, adminOnly: false },
@@ -21,23 +23,36 @@ export default function Sidebar({ userRole, currentPage, setCurrentPage, onLogou
   return (
     <aside className="w-64 border-r border-slate-200 bg-white flex flex-col h-full shrink-0">
       <div className="p-6">
+        {/* DYNAMIC USER PROFILE */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="size-10 rounded-full bg-[#136dec] flex items-center justify-center text-white font-bold">AU</div>
-          <div>
-            <h1 className="text-sm font-bold leading-tight">Admin User</h1>
-            <p className="text-slate-500 text-xs font-normal">System Administrator</p>
+          <div className="size-10 rounded-full bg-[#136dec] flex items-center justify-center text-white font-bold uppercase">
+            {currentUser?.name?.charAt(0) || (isAdmin ? 'A' : 'T')}
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-sm font-bold leading-tight truncate">
+              {currentUser?.name || (isAdmin ? 'Admin User' : 'Teacher')}
+            </h1>
+            <p className="text-slate-500 text-xs font-normal capitalize">
+              {userRole === 'admin' ? 'System Administrator' : 'Faculty Member'}
+            </p>
           </div>
         </div>
+
+        {/* MAIN NAVIGATION */}
         <nav className="space-y-1">
           {menuItems.map((item) => {
+            // Role Gate: Hide admin-only items
             if (item.adminOnly && !isAdmin) return null;
+            
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
                 onClick={() => setCurrentPage(item.id)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                  currentPage === item.id ? 'bg-[#136dec]/10 text-[#136dec] font-semibold' : 'text-slate-600 hover:bg-slate-50'
+                  currentPage === item.id 
+                    ? 'bg-[#136dec]/10 text-[#136dec] font-semibold' 
+                    : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 <Icon size={18} />
@@ -48,28 +63,38 @@ export default function Sidebar({ userRole, currentPage, setCurrentPage, onLogou
         </nav>
       </div>
       
+      {/* BOTTOM ACTION SECTION */}
       <div className="mt-auto p-6 border-t border-slate-100">
-        
-        {/* --- ADDED: PORTAL LINK --- */}
         <div className="mb-4 space-y-1">
-           {/* <button 
-             onClick={() => navigate('/student-portal')} 
-             className="flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 w-full text-sm font-medium rounded-lg transition-all"
-           >
-             <ExternalLink size={18}/> Student Portal
-           </button> */}
-           
-           <button 
-             onClick={() => navigate('/faculty')} 
-             className="flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 w-full text-sm font-medium rounded-lg transition-all"
-           >
-             <ExternalLink size={18}/> Faculty Portal
-           </button>
+           {/* FACULTY PORTAL BUTTON (Fixed to open within Dashboard) */}
+           {userRole === 'teacher' ? (
+             <button 
+               onClick={() => setCurrentPage('faculty-portal')} 
+               className={`flex items-center gap-3 px-3 py-2 w-full text-sm font-medium rounded-lg transition-all ${
+                 currentPage === 'faculty-portal' 
+                   ? 'bg-blue-600 text-white shadow-md' 
+                   : 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+               }`}
+             >
+               <BookOpen size={18}/> My Workspace
+             </button>
+           ) : (
+             <button 
+               onClick={() => setCurrentPage('faculty-view')} 
+               className={`flex items-center gap-3 px-3 py-2 w-full text-sm font-medium rounded-lg transition-all ${
+                 currentPage === 'faculty-view' 
+                   ? 'bg-slate-800 text-white shadow-md' 
+                   : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'
+               }`}
+             >
+               <ExternalLink size={18}/> Faculty Portal View
+             </button>
+           )}
         </div>
-        {/* ------------------------- */}
 
         <div className="bg-emerald-50 text-emerald-600 px-3 py-2 rounded-lg text-[10px] font-bold uppercase mb-4 flex items-center gap-2">
-          <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span> SYSTEM ONLINE
+          <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span> 
+          SYSTEM ONLINE
         </div>
         
         <button className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-[#136dec] w-full text-sm font-medium">
