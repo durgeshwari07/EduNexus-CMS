@@ -30,229 +30,232 @@ import FacultyPortal from './assets/FacultyPortal';
 const API = axios.create({ baseURL: 'http://localhost:5000/api' });
 
 export default function App() {
-  const navigate = useNavigate();
-  const [role, setRole] = useState(() => JSON.parse(localStorage.getItem('user_role')) || null);
-  const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem('current_user')) || null);
-  const [page, setPage] = useState('overview');
-  const [selectedStudent, setSelectedStudent] = useState(null); 
+  const navigate = useNavigate();
+  const [role, setRole] = useState(() => JSON.parse(localStorage.getItem('user_role')) || null);
+  const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem('current_user')) || null);
+  const [page, setPage] = useState('overview');
+  const [selectedStudent, setSelectedStudent] = useState(null); 
 
-  // --- GLOBAL DATA STATE ---
-  const [departments, setDepartments] = useState([]);
-  const [approvedTeachers, setApprovedTeachers] = useState([]);
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [allStudents, setAllStudents] = useState([]);
-  const [batches, setBatches] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [teacherAssignments, setTeacherAssignments] = useState([]);
+  // --- GLOBAL DATA STATE ---
+  const [departments, setDepartments] = useState([]);
+  const [approvedTeachers, setApprovedTeachers] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [allStudents, setAllStudents] = useState([]);
+  const [batches, setBatches] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [teacherAssignments, setTeacherAssignments] = useState([]);
 
-  // --- 🔄 MASTER SYNC (Fetches everything from MySQL) ---
-  const syncData = useCallback(async () => {
-    try {
-      if (!role) return; 
-      const res = await API.get('/dashboard/data');
-      if (res.data) {
-        setDepartments(res.data.departments || []);
-        setApprovedTeachers(res.data.teachers || []);
-        setPendingRequests(res.data.pendingTeachers || []);
-        setAllStudents(res.data.students || []);
-        setBatches(res.data.batches || []);
-        setSubjects(res.data.subjects || []);
-        setTeacherAssignments(res.data.teacherAssignments || []);
-      }
-    } catch (err) { 
-      console.error("Master Sync failed. Ensure Node server and XAMPP are running."); 
-    }
-  }, [role]);
+  // --- 🔄 MASTER SYNC (Fetches everything from MySQL) ---
+  const syncData = useCallback(async () => {
+    try {
+      if (!role) return; 
+      const res = await API.get('/dashboard/data');
+      if (res.data) {
+        setDepartments(res.data.departments || []);
+        setApprovedTeachers(res.data.teachers || []);
+        setPendingRequests(res.data.pendingTeachers || []);
+        setAllStudents(res.data.students || []);
+        setBatches(res.data.batches || []);
+        setSubjects(res.data.subjects || []);
+        setTeacherAssignments(res.data.teacherAssignments || []);
+      }
+    } catch (err) { 
+      console.error("Master Sync failed. Ensure Node server and XAMPP are running."); 
+    }
+  }, [role]);
 
-  useEffect(() => { syncData(); }, [syncData]);
+  useEffect(() => { syncData(); }, [syncData]);
 
-  // --- AUTH HANDLERS ---
-  const handleAuth = (userRole, userData) => {
-    setRole(userRole);
-    setCurrentUser(userData);
-    localStorage.setItem('user_role', JSON.stringify(userRole));
-    localStorage.setItem('current_user', JSON.stringify(userData));
-    
-    // Redirect logic based on role
-    if (userRole === 'admin') {
-      navigate('/dashboard');
-    } else if (userRole === 'teacher') {
-      navigate(`/dashboard`); // Faculty Portal loads inside DashboardLayout
-      setPage('faculty-portal');
-    }
-  };
+  // --- AUTH HANDLERS ---
+  const handleAuth = (userRole, userData) => {
+    setRole(userRole);
+    setCurrentUser(userData);
+    localStorage.setItem('user_role', JSON.stringify(userRole));
+    localStorage.setItem('current_user', JSON.stringify(userData));
+    
+    // Redirect logic based on role
+    if (userRole === 'admin') {
+      navigate('/dashboard');
+    } else if (userRole === 'teacher') {
+      navigate(`/dashboard`); // Faculty Portal loads inside DashboardLayout
+      setPage('faculty-portal');
+    }
+  };
 
-  const handleLogout = () => {
-    setRole(null);
-    setCurrentUser(null);
-    localStorage.clear();
-    navigate('/');
-  };
+  const handleLogout = () => {
+    setRole(null);
+    setCurrentUser(null);
+    localStorage.clear();
+    navigate('/');
+  };
 
-  return (
-    <div className="App min-h-screen bg-[#0a0a0a] text-[#ccc]">
-      <StarField />
-      <Routes>
-        {/* PUBLIC ROUTES */}
-        <Route path="/" element={
-          <>
-            <Navbar 
-              onLoginClick={() => navigate('/login')} 
-              onLogoClick={() => navigate('/')} 
-              onRegisterAdmin={() => navigate('/register/admin')} 
-              onRegisterTeacher={() => navigate('/register/teacher')} 
-            />
-            <main>
-              <Hero onLoginClick={() => navigate('/login')} />
-              <FeatureShowcase />
-              <UserGrid />
-            </main>
-          </>
-        } />
-        
-        <Route path="/login" element={role ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleAuth} />} />
-        
-        {/* EXTERNAL PORTAL ACCESS */}
-        <Route path="/student-portal/:id" element={<StudentPortal />} />
+  return (
+    <div className="App min-h-screen bg-[#0a0a0a] text-[#ccc]">
+      <StarField />
+      <Routes>
+        {/* PUBLIC ROUTES */}
+        <Route path="/" element={
+          <>
+            <Navbar 
+              onLoginClick={() => navigate('/login')} 
+              onLogoClick={() => navigate('/')} 
+              onRegisterAdmin={() => navigate('/register/admin')} 
+              onRegisterTeacher={() => navigate('/register/teacher')} 
+            />
+            <main>
+              <Hero onLoginClick={() => navigate('/login')} />
+              <FeatureShowcase />
+              <UserGrid />
+            </main>
+          </>
+        } />
+        
+        <Route path="/login" element={role ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleAuth} />} />
+        
+        {/* EXTERNAL PORTAL ACCESS */}
+        <Route path="/student-portal/:id" element={<StudentPortal />} />
 
-        {/* 📝 REGISTRATION FLOW */}
-        <Route path="/register/admin" element={
-          <AdminRegistration onRegister={async (formData) => {
-            try {
-              const res = await API.post('/register/admin', formData);
-              if (res.data.success) {
-                alert("Admin Account Registered Successfully!");
-                handleAuth('admin', res.data.user);
-              }
-            } catch (err) {
-              alert(err.response?.data?.message || "Admin Registration Failed");
-            }
-          }} />
-        } />
+        {/* 📝 REGISTRATION FLOW */}
+        <Route path="/register/admin" element={
+          <AdminRegistration onRegister={async (formData) => {
+            try {
+              const res = await API.post('/register/admin', formData);
+              if (res.data.success) {
+                alert("Admin Account Registered Successfully!");
+                handleAuth('admin', res.data.user);
+              }
+            } catch (err) {
+              alert(err.response?.data?.message || "Admin Registration Failed");
+            }
+          }} />
+        } />
 
-        <Route path="/register/teacher" element={
-          <TeacherRegistration 
-            departments={departments} 
-            onRegister={async (formData) => { 
-              try { 
-                const res = await API.post('/register/teacher', formData); 
-                if (res.data.success) { 
-                  alert("Teacher Registration Sent for Admin Approval!"); 
-                  navigate('/login'); 
-                } 
-              } catch (err) { alert("Registration Failed"); } 
-            }} 
-          />
-        } />
+        <Route path="/register/teacher" element={
+          <TeacherRegistration 
+            departments={departments} 
+            onRegister={async (formData) => { 
+              try { 
+                const res = await API.post('/register/teacher', formData); 
+                if (res.data.success) { 
+                  alert("Teacher Registration Sent for Admin Approval!"); 
+                  navigate('/login'); 
+                } 
+              } catch (err) { alert("Registration Failed"); } 
+            }} 
+          />
+        } />
 
-        {/* 🛠️ PROTECTED DASHBOARD ROUTES */}
-        <Route path="/dashboard/*" element={
-          role ? (
-            <DashboardLayout 
-              userRole={role} 
-              currentUser={currentUser} 
-              currentPage={page} 
-              setCurrentPage={setPage} 
-              onLogout={handleLogout}
-            >
-              
-              {page === 'overview' && (
-                <Overview 
-                  departments={departments} 
-                  teachersCount={approvedTeachers.length} 
-                  studentsCount={allStudents.length} 
-                  pendingTeachers={pendingRequests} 
-                />
-              )}
-              
-              {page === 'departments' && (
-                <Departments 
-                  userRole={role} 
-                  departments={departments} 
-                  onAddDept={async (d) => { await API.post('/departments', d); syncData(); }} 
-                  onEditDept={async (id, d) => { await API.put(`/departments/${id}`, d); syncData(); }} 
-                  onDeleteDept={async (id) => { await API.delete(`/departments/${id}`); syncData(); }} 
-                />
-              )}
-              
-              {page === 'teachers' && <Teachers userRole={role} teachers={approvedTeachers} onRefresh={syncData} />}
-              
-              {page === 'students' && (
-                <Students 
-                  userRole={role} 
-                  batches={batches} 
-                  allStudents={allStudents} 
-                  onViewProfile={(student) => { setSelectedStudent(student); setPage('student-portal-view'); }}
-                  onAddStudent={async (d) => { await API.post('/students', d); syncData(); }} 
-                  onDeleteStudent={async (id) => { await API.delete(`/students/${id}`); syncData(); }} 
-                  onAddBatch={async (b) => { await API.post('/batches', b); syncData(); }} 
-                />
-              )}
+        {/* 🛠️ PROTECTED DASHBOARD ROUTES */}
+        <Route path="/dashboard/*" element={
+          role ? (
+            <DashboardLayout 
+              userRole={role} 
+              currentUser={currentUser} 
+              currentPage={page} 
+              setCurrentPage={setPage} 
+              onLogout={handleLogout}
+            >
+              
+              {page === 'overview' && (
+                <Overview 
+                  departments={departments} 
+                  teachersCount={approvedTeachers.length} 
+                  studentsCount={allStudents.length} 
+                  pendingTeachers={pendingRequests} 
+                />
+              )}
+              
+              {page === 'departments' && (
+                <Departments 
+                  userRole={role} 
+                  departments={departments} 
+                  onAddDept={async (d) => { await API.post('/departments', d); syncData(); }} 
+                  onEditDept={async (id, d) => { await API.put(`/departments/${id}`, d); syncData(); }} 
+                  onDeleteDept={async (id) => { await API.delete(`/departments/${id}`); syncData(); }} 
+                />
+              )}
+              
+              {page === 'teachers' && <Teachers userRole={role} teachers={approvedTeachers} onRefresh={syncData} />}
+              
+              {page === 'students' && (
+                <Students 
+                  userRole={role} 
+                  batches={batches} 
+                  allStudents={allStudents} 
+                  onViewProfile={(student) => { setSelectedStudent(student); setPage('student-portal-view'); }}
+                  onAddStudent={async (d) => { await API.post('/students', d); syncData(); }} 
+                  onDeleteStudent={async (id) => { await API.delete(`/students/${id}`); syncData(); }} 
+                  onAddBatch={async (b) => { await API.post('/batches', b); syncData(); }} 
+                />
+              )}
 
-              {page === 'student-portal-view' && selectedStudent && (
-                <div className="portal-container">
-                  <button onClick={() => setPage('students')} className="mb-4 text-blue-400">← Back to Students</button>
-                  <StudentPortal id={selectedStudent.id} isPreview={true} />
-                </div>
-              )}
-              
-              {page === 'subjects' && (
-                <SubjectsManagement 
-                  data={{ 
-                    subjects: subjects, 
-                    courses: departments, 
-                    users: approvedTeachers, 
-                    teacherAssignments: teacherAssignments 
-                  }} 
-                  updateData={async (updatedFullData) => { 
-                    try {
-                      // Logic for ADD, EDIT, DELETE
-                      if (updatedFullData.action === 'edit') {
-                        await API.put(`/subjects/${updatedFullData.subject.id}`, updatedFullData.subject);
-                      } else if (updatedFullData.subjects.length > subjects.length) {
-                        const newSub = updatedFullData.subjects[updatedFullData.subjects.length - 1];
-                        await API.post('/subjects', newSub);
-                      } else if (updatedFullData.subjects.length < subjects.length) {
-                        const deletedId = subjects.find(s => !updatedFullData.subjects.find(us => us.id === s.id))?.id;
-                        if (deletedId) await API.delete(`/subjects/${deletedId}`);
-                      }
-                      
-                      // Teacher Assignments
-                      if (updatedFullData.teacherAssignments?.length > teacherAssignments.length) {
-                        const newAssign = updatedFullData.teacherAssignments[updatedFullData.teacherAssignments.length - 1];
-                        await API.post('/assign-teacher', newAssign);
-                      }
-                      await syncData();
-                    } catch (err) { console.error("Subject Operation Error", err); }
-                  }} 
-                />
-              )}
+              {page === 'student-portal-view' && selectedStudent && (
+                <div className="portal-container">
+                  <button onClick={() => setPage('students')} className="mb-4 text-blue-400">← Back to Students</button>
+                  <StudentPortal id={selectedStudent.id} isPreview={true} />
+                </div>
+              )}
+              
+              {page === 'subjects' && (
+                <SubjectsManagement 
+                  data={{ 
+                    subjects: subjects, 
+                    courses: departments, 
+                    users: approvedTeachers, 
+                    teacherAssignments: teacherAssignments 
+                  }} 
+                  updateData={async (updatedFullData) => { 
+                    try {
+                      // Logic for ADD, EDIT, DELETE
+                      if (updatedFullData.action === 'edit') {
+                        await API.put(`/subjects/${updatedFullData.subject.id}`, updatedFullData.subject);
+                      } else if (updatedFullData.subjects.length > subjects.length) {
+                        const newSub = updatedFullData.subjects[updatedFullData.subjects.length - 1];
+                        await API.post('/subjects', newSub);
+                      } else if (updatedFullData.subjects.length < subjects.length) {
+                        const deletedId = subjects.find(s => !updatedFullData.subjects.find(us => us.id === s.id))?.id;
+                        if (deletedId) await API.delete(`/subjects/${deletedId}`);
+                      }
+                      
+                      // Teacher Assignments
+                      if (updatedFullData.teacherAssignments?.length > teacherAssignments.length) {
+                        const newAssign = updatedFullData.teacherAssignments[updatedFullData.teacherAssignments.length - 1];
+                        await API.post('/assign-teacher', newAssign);
+                      }
+                      await syncData();
+                    } catch (err) { console.error("Subject Operation Error", err); }
+                  }} 
+                />
+              )}
 
-              {page === 'faculty-portal' && (
-                <FacultyPortal 
-                  currentUser={currentUser} 
-                  userRole={role}
-                  onSaveMarks={async (marksData) => {
-                    await API.post('/faculty/save-marks', marksData);
-                    syncData();
-                  }}
-                />
-              )}
-              
-              {page === 'documents' && <DocumentVerification onRefresh={syncData} />}
-              
-              {page === 'reports' && (
-                <Reports 
-                  data={{ departments, teachers: approvedTeachers, students: allStudents, subjects }} 
-                />
-              )}
-            
-            </DashboardLayout>
-          ) : <Navigate to="/login" />
-        } />
-        
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </div> 
-  );
-}
+              {page === 'faculty-portal' && (
+                <FacultyPortal 
+                  currentUser={currentUser} 
+                  userRole={role}
+                  onSaveMarks={async (marksData) => {
+                    await API.post('/faculty/save-marks', marksData);
+                    syncData();
+                  }}
+                />
+              )}
+              
+              {page === 'documents' && <DocumentVerification onRefresh={syncData} />}
+              
+              {page === 'reports' && (
+                <Reports 
+                  data={{ departments, teachers: approvedTeachers, students: allStudents, subjects }} 
+                />
+              )}
+            
+            </DashboardLayout>
+          ) : <Navigate to="/login" />
+        } />
+        
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div> 
+  );
+}  
+
+
+

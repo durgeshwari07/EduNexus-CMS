@@ -12,518 +12,35 @@
 //   const [searchQuery, setSearchQuery] = useState('');
 //   const navigate = useNavigate();
 
-//   // 1. DYNAMIC STATISTICS
+//   // 1. DYNAMIC STATISTICS - Updated for Clarity
 //   const stats = [
-//     { label: 'Total Students', value: students.length, icon: <Users size={18} />, color: 'bg-blue-50 text-blue-600' },
-//     { label: 'Semester', value: batch.year || 'N/A', icon: <GraduationCap size={18} />, color: 'bg-indigo-50 text-indigo-600' },
-//     { label: 'Batch Year', value: batch.batch, icon: <Calendar size={18} />, color: 'bg-cyan-50 text-cyan-600' },
-//     { label: 'Dept Code', value: batch.dept, icon: <Hash size={18} />, color: 'bg-slate-50 text-slate-600' },
-//     { label: 'Active', value: students.filter(s => s.status === 'Active').length, icon: <CheckCircle size={18} />, color: 'bg-green-50 text-green-600' },
-//     { label: 'Backlogs', value: '0', icon: <AlertCircle size={18} />, color: 'bg-red-50 text-red-600' },
+//     { label: 'Total Students', value: students.length, icon: <Users size={16} />, color: 'bg-blue-50 text-blue-600' },
+//     { label: 'Current Sem', value: batch.year || '1', icon: <GraduationCap size={16} />, color: 'bg-indigo-50 text-indigo-600' },
+//     { label: 'Batch ID', value: batch.batch || '2024', icon: <Hash size={16} />, color: 'bg-slate-50 text-slate-600' },
+//     { label: 'Active', value: students.filter(s => s.status === 'Active').length, icon: <CheckCircle size={16} />, color: 'bg-green-50 text-green-600' },
 //   ];
 
-//   // 2. LIVE FILTERING (String safety included)
+//   // 2. LIVE FILTERING (Search by Name or Enrollment)
 //   const filteredStudents = students.filter(s => 
 //     s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
 //     s.enrollmentNo?.toString().toLowerCase().includes(searchQuery.toLowerCase())
 //   );
 
+//   // 3. RELATIONAL FORM SUBMISSION
 //   const handleFormSubmit = (e) => {
 //     e.preventDefault();
 //     const fd = new FormData(e.target);
     
-//     // CRITICAL: This object must match your backend table columns
-//     const studentData = {
-//       name: fd.get('name'),
-//       enrollmentNo: fd.get('enrollmentNo'),
-//       email: fd.get('email'),
-//       phone: fd.get('phone'),
-//       semester: fd.get('semester'),
-//       division: fd.get('division'),
-//       academicYear: fd.get('academicYear'),
-//       dob: fd.get('dob'),
-//       address: fd.get('address'),
-//       guardianName: fd.get('guardianName'),
-//       guardianPhone: fd.get('guardianPhone'),
-//       username: fd.get('username'),
-//       password: fd.get('password'),
-//       batchId: batch.id, // Linking to current batch
-//       status: 'Active'
-//     };
-
-//     onAddStudent(studentData);
-//     setIsModalOpen(false);
-//     e.target.reset();
-//   };
-
-//   return (
-//     <div className="space-y-8 animate-in fade-in duration-500">
-      
-//       {/* STATISTICS CARDS */}
-//       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-//         {stats.map((stat, idx) => (
-//           <div key={idx} className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm">
-//             <div className="flex justify-between items-start mb-2">
-//               <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{stat.label}</p>
-//               <div className={`p-1.5 rounded-lg ${stat.color}`}>{stat.icon}</div>
-//             </div>
-//             <p className="text-xl font-black text-slate-900">{stat.value}</p>
-//           </div>
-//         ))}
-//       </div>
-
-//       {/* TABLE ACTION BAR */}
-//       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-//         <div className="p-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/30">
-//           <div className="relative flex-1 min-w-[300px]">
-//             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-//             <input 
-//               type="text" 
-//               placeholder="Search by name or enrollment number..." 
-//               value={searchQuery}
-//               onChange={(e) => setSearchQuery(e.target.value)}
-//               className="w-full pl-10 pr-4 py-2.5 text-xs font-medium border border-slate-200 rounded-xl outline-none"
-//             />
-//           </div>
-//           <div className="flex gap-2">
-//             <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 bg-white"><Download size={14} /> Export</button>
-//             {isAdmin && (
-//               <button 
-//                 onClick={() => setIsModalOpen(true)}
-//                 className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-xl font-bold text-xs shadow-lg"
-//               >
-//                 <Plus size={16} /> New Student
-//               </button>
-//             )}
-//           </div>
-//         </div>
-
-//         {/* STUDENT TABLE */}
-//         <div className="overflow-x-auto">
-//           <table className="w-full text-left">
-//             <thead className="bg-slate-50/50 border-b text-[10px] font-black text-slate-400 uppercase tracking-widest">
-//               <tr>
-//                 <th className="px-6 py-5">Student</th>
-//                 <th className="px-6 py-5 text-center">Enrollment</th>
-//                 <th className="px-6 py-5 text-center">Semester/Div</th>
-//                 <th className="px-6 py-5 text-center">Contact</th>
-//                 <th className="px-6 py-5 text-center">Status</th>
-//                 <th className="px-6 py-5 text-right">Actions</th>
-//               </tr>
-//             </thead>
-//             <tbody className="divide-y divide-slate-50">
-//               {filteredStudents.map((s, idx) => (
-//                 <tr key={s.id || idx} className="hover:bg-slate-50/80 transition-colors group">
-//                   <td className="px-6 py-4">
-//                     <div className="flex items-center gap-3">
-//                       <div className="size-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-//                         {s.name?.charAt(0).toUpperCase()}
-//                       </div>
-//                       <div>
-//                         <p className="text-xs font-bold text-slate-900">{s.name}</p>
-//                         <p className="text-[10px] text-slate-400 font-medium">{s.email}</p>
-//                       </div>
-//                     </div>
-//                   </td>
-//                   <td className="px-6 py-4 text-center text-[11px] font-bold text-slate-500">{s.enrollmentNo}</td>
-//                   <td className="px-6 py-4 text-center text-[11px] font-bold text-slate-500">{s.semester} - {s.division}</td>
-//                   <td className="px-6 py-4 text-center text-[11px] font-bold text-slate-500">{s.phone}</td>
-//                   <td className="px-6 py-4 text-center">
-//                     <span className="text-[9px] font-black px-2.5 py-1 rounded-full uppercase bg-green-50 text-green-600">Active</span>
-//                   </td>
-//                   <td className="px-6 py-4 text-right">
-//                     <div className="flex justify-end gap-1">
-//                       <button onClick={() => navigate(`/student/${s.id}`)} className="p-2 hover:text-blue-600 transition-colors">
-//                         <UserCircle size={16}/>
-//                       </button>
-//                       {isAdmin && (
-//                         <button onClick={() => onDeleteStudent(s.id)} className="p-2 hover:text-red-600 transition-colors">
-//                           <Trash2 size={16}/>
-//                         </button>
-//                       )}
-//                     </div>
-//                   </td>
-//                 </tr>
-//               ))}
-//             </tbody>
-//           </table>
-//         </div>
-//       </div>
-
-//       {/* DETAILED FORM MODAL */}
-//       {isModalOpen && (
-//         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-//           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-//           <div className="relative bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-//             <div className="p-6 border-b sticky top-0 bg-white z-10 flex justify-between items-center">
-//               <div>
-//                 <h2 className="text-xl font-black text-slate-900">Add New Student</h2>
-//                 <p className="text-xs text-slate-500">Academic Year Registration for {batch.dept}</p>
-//               </div>
-//               <X className="cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setIsModalOpen(false)} />
-//             </div>
-
-//             <form onSubmit={handleFormSubmit} className="p-8 space-y-8 text-left">
-//               {/* Photo Upload Section */}
-//               <div className="flex flex-col items-center py-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-//                 <div className="size-20 rounded-full bg-white shadow-inner flex items-center justify-center relative">
-//                   <Camera size={24} className="text-slate-300" />
-//                 </div>
-//                 <p className="text-[10px] font-black text-blue-600 mt-2 uppercase">Click to Upload Photo</p>
-//               </div>
-
-//               {/* Form Grid */}
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//                 <InputGroup label="Full Name" name="name" placeholder="John Doe" />
-//                 <InputGroup label="Enrollment No" name="enrollmentNo" placeholder="ENR2024001" />
-//                 <InputGroup label="Email ID" name="email" type="email" placeholder="john@example.com" />
-//                 <InputGroup label="Phone Number" name="phone" placeholder="+91 00000 00000" />
-                
-//                 <SelectGroup label="Semester" name="semester" options={['1st Sem', '2nd Sem', '3rd Sem', '4th Sem', '5th Sem', '6th Sem']} />
-//                 <SelectGroup label="Division" name="division" options={['A', 'B', 'C', 'D']} />
-                
-//                 <SelectGroup label="Academic Year" name="academicYear" options={['2023-24', '2024-25', '2025-26']} />
-//                 <InputGroup label="Date of Birth" name="dob" type="date" />
-
-//                 <div className="md:col-span-2 space-y-2">
-//                   <label className="text-[10px] font-black text-slate-400 uppercase">Residential Address</label>
-//                   <textarea name="address" className="w-full border rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-100 min-h-[80px]" placeholder="Enter full address..."></textarea>
-//                 </div>
-
-//                 <div className="border-t pt-6 md:col-span-2"><h3 className="text-sm font-black text-slate-800 mb-4">Guardian Details</h3></div>
-                
-//                 <InputGroup label="Guardian Name" name="guardianName" placeholder="Parent/Guardian Name" />
-//                 <InputGroup label="Guardian Phone" name="guardianPhone" placeholder="+91 00000 00000" />
-
-//                 <div className="border-t pt-6 md:col-span-2"><h3 className="text-sm font-black text-slate-800 mb-4">System Credentials</h3></div>
-                
-//                 <InputGroup label="Username" name="username" placeholder="johndoe_2024" />
-//                 <InputGroup label="Password" name="password" type="password" placeholder="••••••••" />
-//               </div>
-
-//               <div className="flex justify-end gap-3 pt-6 border-t">
-//                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-8 py-3 rounded-xl font-bold text-xs bg-slate-100 text-slate-600">Discard</button>
-//                 <button type="submit" className="px-12 py-3 rounded-xl font-bold text-xs bg-blue-600 text-white shadow-xl shadow-blue-200">Register Student</button>
-//               </div>
-//             </form>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// // Helper Components
-// const InputGroup = ({ label, name, type = "text", placeholder }) => (
-//   <div className="space-y-2">
-//     <label className="block text-[10px] font-black text-slate-400 uppercase">{label}</label>
-//     <input name={name} type={type} placeholder={placeholder} className="w-full border rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-100 transition-all text-slate-900" required />
-//   </div>
-// );
-
-// const SelectGroup = ({ label, name, options }) => (
-//   <div className="space-y-2">
-//     <label className="block text-[10px] font-black text-slate-400 uppercase">{label}</label>
-//     <select name={name} className="w-full border rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-100 bg-white text-slate-900" required>
-//       <option value="">Select {label}</option>
-//       {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-//     </select>
-//   </div>
-// );
-
-
-
-// import React, { useState } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import { 
-//   Search, Download, Plus, Eye, Edit2, 
-//   Users, User, CheckCircle, AlertCircle, Calendar,
-//   ChevronLeft, ChevronRight, X, Camera, Mail, Phone,
-//   UserCircle, Hash, MapPin, GraduationCap, Trash2 
-// } from 'lucide-react';
-
-// export default function StudentListTable({ batch, students, onAddStudent, onDeleteStudent, isAdmin }) {
-//   const [isModalOpen, setIsModalOpen] = useState(false);
-//   const [searchQuery, setSearchQuery] = useState('');
-//   const navigate = useNavigate();
-
-//   // 1. DYNAMIC STATISTICS
-//   const stats = [
-//     { label: 'Total Students', value: students.length, icon: <Users size={18} />, color: 'bg-blue-50 text-blue-600' },
-//     { label: 'Semester', value: batch.year || 'N/A', icon: <GraduationCap size={18} />, color: 'bg-indigo-50 text-indigo-600' },
-//     { label: 'Batch Year', value: batch.batch, icon: <Calendar size={18} />, color: 'bg-cyan-50 text-cyan-600' },
-//     { label: 'Dept Code', value: batch.dept, icon: <Hash size={18} />, color: 'bg-slate-50 text-slate-600' },
-//     { label: 'Active', value: students.filter(s => s.status === 'Active').length, icon: <CheckCircle size={18} />, color: 'bg-green-50 text-green-600' },
-//     { label: 'Backlogs', value: '0', icon: <AlertCircle size={18} />, color: 'bg-red-50 text-red-600' },
-//   ];
-
-//   // 2. LIVE FILTERING (String safety included)
-//   const filteredStudents = students.filter(s => 
-//     s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-//     s.enrollmentNo?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-//   );
-
-//   const handleFormSubmit = (e) => {
-//     e.preventDefault();
-//     const fd = new FormData(e.target);
-    
-//     // CRITICAL: This object must match your backend table columns
-//     const studentData = {
-//       name: fd.get('name'),
-//       enrollmentNo: fd.get('enrollmentNo'),
-//       email: fd.get('email'),
-//       phone: fd.get('phone'),
-//       semester: fd.get('semester'),
-//       division: fd.get('division'),
-//       academicYear: fd.get('academicYear'),
-//       dob: fd.get('dob'),
-//       address: fd.get('address'),
-//       guardianName: fd.get('guardianName'),
-//       guardianPhone: fd.get('guardianPhone'),
-//       username: fd.get('username'),
-//       password: fd.get('password'),
-//       batchId: batch.id, // Linking to current batch
-//       status: 'Active'
-//     };
-
-//     onAddStudent(studentData);
-//     setIsModalOpen(false);
-//     e.target.reset();
-//   };
-
-//   return (
-//     <div className="space-y-8 animate-in fade-in duration-500">
-      
-//       {/* STATISTICS CARDS */}
-//       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-//         {stats.map((stat, idx) => (
-//           <div key={idx} className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm">
-//             <div className="flex justify-between items-start mb-2">
-//               <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{stat.label}</p>
-//               <div className={`p-1.5 rounded-lg ${stat.color}`}>{stat.icon}</div>
-//             </div>
-//             <p className="text-xl font-black text-slate-900">{stat.value}</p>
-//           </div>
-//         ))}
-//       </div>
-
-//       {/* TABLE ACTION BAR */}
-//       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-//         <div className="p-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/30">
-//           <div className="relative flex-1 min-w-[300px]">
-//             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-//             <input 
-//               type="text" 
-//               placeholder="Search by name or enrollment number..." 
-//               value={searchQuery}
-//               onChange={(e) => setSearchQuery(e.target.value)}
-//               className="w-full pl-10 pr-4 py-2.5 text-xs font-medium border border-slate-200 rounded-xl outline-none"
-//             />
-//           </div>
-//           <div className="flex gap-2">
-//             <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 bg-white"><Download size={14} /> Export</button>
-//             {isAdmin && (
-//               <button 
-//                 onClick={() => setIsModalOpen(true)}
-//                 className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-xl font-bold text-xs shadow-lg"
-//               >
-//                 <Plus size={16} /> New Student
-//               </button>
-//             )}
-//           </div>
-//         </div>
-
-//         {/* STUDENT TABLE */}
-//         <div className="overflow-x-auto">
-//           <table className="w-full text-left">
-//             <thead className="bg-slate-50/50 border-b text-[10px] font-black text-slate-400 uppercase tracking-widest">
-//               <tr>
-//                 <th className="px-6 py-5">Student</th>
-//                 <th className="px-6 py-5 text-center">Enrollment</th>
-//                 <th className="px-6 py-5 text-center">Semester/Div</th>
-//                 <th className="px-6 py-5 text-center">Contact</th>
-//                 <th className="px-6 py-5 text-center">Status</th>
-//                 <th className="px-6 py-5 text-right">Actions</th>
-//               </tr>
-//             </thead>
-//             <tbody className="divide-y divide-slate-50">
-//               {filteredStudents.map((s, idx) => (
-//                 <tr key={s.id || idx} className="hover:bg-slate-50/80 transition-colors group">
-//                   <td className="px-6 py-4">
-//                     <div className="flex items-center gap-3">
-//                       <div className="size-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-//                         {s.name?.charAt(0).toUpperCase()}
-//                       </div>
-//                       <div>
-//                         <p className="text-xs font-bold text-slate-900">{s.name}</p>
-//                         <p className="text-[10px] text-slate-400 font-medium">{s.email}</p>
-//                       </div>
-//                     </div>
-//                   </td>
-//                   <td className="px-6 py-4 text-center text-[11px] font-bold text-slate-500">{s.enrollmentNo}</td>
-//                   <td className="px-6 py-4 text-center text-[11px] font-bold text-slate-500">{s.semester} - {s.division}</td>
-//                   <td className="px-6 py-4 text-center text-[11px] font-bold text-slate-500">{s.phone}</td>
-//                   <td className="px-6 py-4 text-center">
-//                     <span className="text-[9px] font-black px-2.5 py-1 rounded-full uppercase bg-green-50 text-green-600">Active</span>
-//                   </td>
-//                   <td className="px-6 py-4 text-right">
-//                     <div className="flex justify-end gap-1">
-                      
-//                       {/* --- THIS BUTTON OPENS THE STUDENT PORTAL --- */}
-//                       <button 
-//                         onClick={() => navigate(`/student-portal/${s.id}`)} 
-//                         className="p-2 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-//                         title="View Student Profile"
-//                       >
-//                         <UserCircle size={16}/>
-//                       </button>
-//                       {/* ------------------------------------------- */}
-
-//                       {isAdmin && (
-//                         <button onClick={() => onDeleteStudent(s.id)} className="p-2 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
-//                           <Trash2 size={16}/>
-//                         </button>
-//                       )}
-//                     </div>
-//                   </td>
-//                 </tr>
-//               ))}
-//             </tbody>
-//           </table>
-//         </div>
-//       </div>
-
-//       {/* DETAILED FORM MODAL */}
-//       {isModalOpen && (
-//         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-//           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-//           <div className="relative bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-//             <div className="p-6 border-b sticky top-0 bg-white z-10 flex justify-between items-center">
-//               <div>
-//                 <h2 className="text-xl font-black text-slate-900">Add New Student</h2>
-//                 <p className="text-xs text-slate-500">Academic Year Registration for {batch.dept}</p>
-//               </div>
-//               <X className="cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setIsModalOpen(false)} />
-//             </div>
-
-//             <form onSubmit={handleFormSubmit} className="p-8 space-y-8 text-left">
-//               {/* Photo Upload Section */}
-//               <div className="flex flex-col items-center py-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-//                 <div className="size-20 rounded-full bg-white shadow-inner flex items-center justify-center relative">
-//                   <Camera size={24} className="text-slate-300" />
-//                 </div>
-//                 <p className="text-[10px] font-black text-blue-600 mt-2 uppercase">Click to Upload Photo</p>
-//               </div>
-
-//               {/* Form Grid */}
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//                 <InputGroup label="Full Name" name="name" placeholder="John Doe" />
-//                 <InputGroup label="Enrollment No" name="enrollmentNo" placeholder="ENR2024001" />
-//                 <InputGroup label="Email ID" name="email" type="email" placeholder="john@example.com" />
-//                 <InputGroup label="Phone Number" name="phone" placeholder="+91 00000 00000" />
-                
-//                 <SelectGroup label="Semester" name="semester" options={['1st Sem', '2nd Sem', '3rd Sem', '4th Sem', '5th Sem', '6th Sem']} />
-//                 <SelectGroup label="Division" name="division" options={['A', 'B', 'C', 'D']} />
-                
-//                 <SelectGroup label="Academic Year" name="academicYear" options={['2023-24', '2024-25', '2025-26']} />
-//                 <InputGroup label="Date of Birth" name="dob" type="date" />
-
-//                 <div className="md:col-span-2 space-y-2">
-//                   <label className="text-[10px] font-black text-slate-400 uppercase">Residential Address</label>
-//                   <textarea name="address" className="w-full border rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-100 min-h-[80px]" placeholder="Enter full address..."></textarea>
-//                 </div>
-
-//                 <div className="border-t pt-6 md:col-span-2"><h3 className="text-sm font-black text-slate-800 mb-4">Guardian Details</h3></div>
-                
-//                 <InputGroup label="Guardian Name" name="guardianName" placeholder="Parent/Guardian Name" />
-//                 <InputGroup label="Guardian Phone" name="guardianPhone" placeholder="+91 00000 00000" />
-
-//                 <div className="border-t pt-6 md:col-span-2"><h3 className="text-sm font-black text-slate-800 mb-4">System Credentials</h3></div>
-                
-//                 <InputGroup label="Username" name="username" placeholder="johndoe_2024" />
-//                 <InputGroup label="Password" name="password" type="password" placeholder="••••••••" />
-//               </div>
-
-//               <div className="flex justify-end gap-3 pt-6 border-t">
-//                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-8 py-3 rounded-xl font-bold text-xs bg-slate-100 text-slate-600">Discard</button>
-//                 <button type="submit" className="px-12 py-3 rounded-xl font-bold text-xs bg-blue-600 text-white shadow-xl shadow-blue-200">Register Student</button>
-//               </div>
-//             </form>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// // Helper Components
-// const InputGroup = ({ label, name, type = "text", placeholder }) => (
-//   <div className="space-y-2">
-//     <label className="block text-[10px] font-black text-slate-400 uppercase">{label}</label>
-//     <input name={name} type={type} placeholder={placeholder} className="w-full border rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-100 transition-all text-slate-900" required />
-//   </div>
-// );
-
-// const SelectGroup = ({ label, name, options }) => (
-//   <div className="space-y-2">
-//     <label className="block text-[10px] font-black text-slate-400 uppercase">{label}</label>
-//     <select name={name} className="w-full border rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-100 bg-white text-slate-900" required>
-//       <option value="">Select {label}</option>
-//       {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-//     </select>
-//   </div>
-// );
-
-
-
-
-
-
-// import React, { useState } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import { 
-//   Search, Download, Plus, Eye, Edit2, 
-//   Users, User, CheckCircle, AlertCircle, Calendar,
-//   ChevronLeft, ChevronRight, X, Camera, Mail, Phone,
-//   UserCircle, Hash, MapPin, GraduationCap, Trash2 
-// } from 'lucide-react';
-
-// export default function StudentListTable({ batch, students, onAddStudent, onDeleteStudent, isAdmin }) {
-//   const [isModalOpen, setIsModalOpen] = useState(false);
-//   const [searchQuery, setSearchQuery] = useState('');
-//   const navigate = useNavigate();
-
-//   // 1. DYNAMIC STATISTICS
-//   const stats = [
-//     { label: 'Total Students', value: students.length, icon: <Users size={18} />, color: 'bg-blue-50 text-blue-600' },
-//     { label: 'Semester', value: batch.year || 'N/A', icon: <GraduationCap size={18} />, color: 'bg-indigo-50 text-indigo-600' },
-//     { label: 'Batch Year', value: batch.batch, icon: <Calendar size={18} />, color: 'bg-cyan-50 text-cyan-600' },
-//     { label: 'Dept Code', value: batch.dept, icon: <Hash size={18} />, color: 'bg-slate-50 text-slate-600' },
-//     { label: 'Active', value: students.filter(s => s.status === 'Active').length, icon: <CheckCircle size={18} />, color: 'bg-green-50 text-green-600' },
-//     { label: 'Backlogs', value: '0', icon: <AlertCircle size={18} />, color: 'bg-red-50 text-red-600' },
-//   ];
-
-//   // 2. LIVE FILTERING (String safety included)
-//   const filteredStudents = students.filter(s => 
-//     s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-//     s.enrollmentNo?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-//   );
-
-//   const handleFormSubmit = (e) => {
-//     e.preventDefault();
-//     const fd = new FormData(e.target);
-    
-//     // 🔄 ONE-FLOW LOGIC: Convert Semester string (e.g., "1st Sem") to Number (e.g., 1)
+//     // Convert "1st Sem" -> 1 for Database Integrity
 //     const rawSemester = fd.get('semester');
 //     const semesterValue = parseInt(rawSemester) || 1; 
 
-//     // CRITICAL: This object must match your backend table columns
 //     const studentData = {
 //       name: fd.get('name'),
 //       enrollmentNo: fd.get('enrollmentNo'),
 //       email: fd.get('email'),
 //       phone: fd.get('phone'),
-//       semester: semesterValue, // 🔄 Saved as integer for relational filtering
+//       semester: semesterValue, 
 //       division: fd.get('division'),
 //       academicYear: fd.get('academicYear'),
 //       dob: fd.get('dob'),
@@ -532,7 +49,7 @@
 //       guardianPhone: fd.get('guardianPhone'),
 //       username: fd.get('username'),
 //       password: fd.get('password'),
-//       batchId: batch.id, // Linking to current batch
+//       batchId: batch.id, 
 //       status: 'Active'
 //     };
 
@@ -542,14 +59,14 @@
 //   };
 
 //   return (
-//     <div className="space-y-8 animate-in fade-in duration-500">
+//     <div className="space-y-6 animate-in fade-in duration-500">
       
 //       {/* STATISTICS CARDS */}
-//       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+//       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 //         {stats.map((stat, idx) => (
-//           <div key={idx} className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm">
+//           <div key={idx} className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
 //             <div className="flex justify-between items-start mb-2">
-//               <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{stat.label}</p>
+//               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
 //               <div className={`p-1.5 rounded-lg ${stat.color}`}>{stat.icon}</div>
 //             </div>
 //             <p className="text-xl font-black text-slate-900">{stat.value}</p>
@@ -564,18 +81,20 @@
 //             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
 //             <input 
 //               type="text" 
-//               placeholder="Search by name or enrollment number..." 
+//               placeholder="Search students..." 
 //               value={searchQuery}
 //               onChange={(e) => setSearchQuery(e.target.value)}
-//               className="w-full pl-10 pr-4 py-2.5 text-xs font-medium border border-slate-200 rounded-xl outline-none"
+//               className="w-full pl-10 pr-4 py-2.5 text-xs font-medium border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100"
 //             />
 //           </div>
 //           <div className="flex gap-2">
-//             <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 bg-white"><Download size={14} /> Export</button>
+//             <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 bg-white hover:bg-slate-50 uppercase tracking-widest">
+//               <Download size={14} /> Export
+//             </button>
 //             {isAdmin && (
 //               <button 
 //                 onClick={() => setIsModalOpen(true)}
-//                 className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-xl font-bold text-xs shadow-lg"
+//                 className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all"
 //               >
 //                 <Plus size={16} /> New Student
 //               </button>
@@ -586,60 +105,64 @@
 //         {/* STUDENT TABLE */}
 //         <div className="overflow-x-auto">
 //           <table className="w-full text-left">
-//             <thead className="bg-slate-50/50 border-b text-[10px] font-black text-slate-400 uppercase tracking-widest">
+//             <thead className="bg-slate-50/50 border-b text-[9px] font-black text-slate-400 uppercase tracking-[0.1em]">
 //               <tr>
-//                 <th className="px-6 py-5">Student</th>
+//                 <th className="px-6 py-5">Profile</th>
 //                 <th className="px-6 py-5 text-center">Enrollment</th>
-//                 <th className="px-6 py-5 text-center">Semester/Div</th>
+//                 <th className="px-6 py-5 text-center">Academic info</th>
 //                 <th className="px-6 py-5 text-center">Contact</th>
 //                 <th className="px-6 py-5 text-center">Status</th>
 //                 <th className="px-6 py-5 text-right">Actions</th>
 //               </tr>
 //             </thead>
 //             <tbody className="divide-y divide-slate-50">
-//               {filteredStudents.map((s, idx) => (
-//                 <tr key={s.id || idx} className="hover:bg-slate-50/80 transition-colors group">
+//               {filteredStudents.length > 0 ? filteredStudents.map((s, idx) => (
+//                 <tr key={s.id || idx} className="hover:bg-blue-50/30 transition-colors group">
 //                   <td className="px-6 py-4">
 //                     <div className="flex items-center gap-3">
-//                       <div className="size-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+//                       <div className="size-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-black text-xs">
 //                         {s.name?.charAt(0).toUpperCase()}
 //                       </div>
 //                       <div>
-//                         <p className="text-xs font-bold text-slate-900">{s.name}</p>
+//                         <p className="text-xs font-black text-slate-800">{s.name}</p>
 //                         <p className="text-[10px] text-slate-400 font-medium">{s.email}</p>
 //                       </div>
 //                     </div>
 //                   </td>
-//                   <td className="px-6 py-4 text-center text-[11px] font-bold text-slate-500">{s.enrollmentNo}</td>
-//                   <td className="px-6 py-4 text-center text-[11px] font-bold text-slate-500">
-//                     {/* 🔄 Displays "Sem X" logic */}
-//                     Sem {s.semester} - {s.division}
+//                   <td className="px-6 py-4 text-center text-[11px] font-black text-slate-600">{s.enrollmentNo}</td>
+//                   <td className="px-6 py-4 text-center text-[10px] font-bold text-slate-500">
+//                     <span className="bg-slate-100 px-2 py-0.5 rounded text-blue-600 uppercase">Sem {s.semester}</span>
+//                     <span className="ml-2">Div {s.division}</span>
 //                   </td>
-//                   <td className="px-6 py-4 text-center text-[11px] font-bold text-slate-500">{s.phone}</td>
+//                   <td className="px-6 py-4 text-center text-[10px] font-bold text-slate-500">{s.phone}</td>
 //                   <td className="px-6 py-4 text-center">
-//                     <span className="text-[9px] font-black px-2.5 py-1 rounded-full uppercase bg-green-50 text-green-600">Active</span>
+//                     <span className="text-[9px] font-black px-2.5 py-1 rounded-full uppercase bg-green-100 text-green-700 border border-green-200">Active</span>
 //                   </td>
 //                   <td className="px-6 py-4 text-right">
 //                     <div className="flex justify-end gap-1">
-                      
-//                       {/* --- THIS BUTTON OPENS THE STUDENT PORTAL --- */}
 //                       <button 
 //                         onClick={() => navigate(`/student-portal/${s.id}`)} 
-//                         className="p-2 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-//                         title="View Student Profile"
+//                         className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+//                         title="View Full Profile"
 //                       >
-//                         <UserCircle size={16}/>
+//                         <UserCircle size={18}/>
 //                       </button>
 
 //                       {isAdmin && (
-//                         <button onClick={() => onDeleteStudent(s.id)} className="p-2 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
-//                           <Trash2 size={16}/>
+//                         <button onClick={() => onDeleteStudent(s.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+//                           <Trash2 size={18}/>
 //                         </button>
 //                       )}
 //                     </div>
 //                   </td>
 //                 </tr>
-//               ))}
+//               )) : (
+//                 <tr>
+//                   <td colSpan="6" className="px-6 py-20 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">
+//                     No students found in this batch
+//                   </td>
+//                 </tr>
+//               )}
 //             </tbody>
 //           </table>
 //         </div>
@@ -648,56 +171,65 @@
 //       {/* DETAILED FORM MODAL */}
 //       {isModalOpen && (
 //         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-//           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-//           <div className="relative bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-//             <div className="p-6 border-b sticky top-0 bg-white z-10 flex justify-between items-center">
+//           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsModalOpen(false)} />
+//           <div className="relative bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 max-h-[90vh] flex flex-col">
+//             <div className="p-8 border-b bg-white flex justify-between items-center">
 //               <div>
-//                 <h2 className="text-xl font-black text-slate-900">Add New Student</h2>
-//                 <p className="text-xs text-slate-500">Academic Year Registration for {batch.dept}</p>
+//                 <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Registration</h2>
+//                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1">Add Student to {batch.dept} • {batch.batch}</p>
 //               </div>
-//               <X className="cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setIsModalOpen(false)} />
+//               <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors">
+//                 <X size={20} />
+//               </button>
 //             </div>
 
-//             <form onSubmit={handleFormSubmit} className="p-8 space-y-8 text-left">
-//               <div className="flex flex-col items-center py-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-//                 <div className="size-20 rounded-full bg-white shadow-inner flex items-center justify-center relative">
-//                   <Camera size={24} className="text-slate-300" />
+//             <form onSubmit={handleFormSubmit} className="p-8 space-y-8 overflow-y-auto text-left">
+//               <div className="flex flex-col items-center py-6 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
+//                 <div className="size-20 rounded-full bg-white shadow-inner flex items-center justify-center relative border border-slate-100">
+//                   <Camera size={24} className="text-slate-200" />
 //                 </div>
-//                 <p className="text-[10px] font-black text-blue-600 mt-2 uppercase">Click to Upload Photo</p>
+//                 <p className="text-[10px] font-black text-slate-400 mt-3 uppercase tracking-widest">Upload Identity Photo</p>
 //               </div>
 
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
 //                 <InputGroup label="Full Name" name="name" placeholder="John Doe" />
 //                 <InputGroup label="Enrollment No" name="enrollmentNo" placeholder="ENR2024001" />
-//                 <InputGroup label="Email ID" name="email" type="email" placeholder="john@example.com" />
-//                 <InputGroup label="Phone Number" name="phone" placeholder="+91 00000 00000" />
+//                 <InputGroup label="Institutional Email" name="email" type="email" placeholder="john@college.edu" />
+//                 <InputGroup label="Contact Number" name="phone" placeholder="+91 00000 00000" />
                 
-//                 {/* 🔄 Options map to the parseInt logic in handleFormSubmit */}
 //                 <SelectGroup label="Semester" name="semester" options={['1st Sem', '2nd Sem', '3rd Sem', '4th Sem', '5th Sem', '6th Sem']} />
 //                 <SelectGroup label="Division" name="division" options={['A', 'B', 'C', 'D']} />
                 
-//                 <SelectGroup label="Academic Year" name="academicYear" options={['2023-24', '2024-25', '2025-26']} />
+//                 <SelectGroup label="Academic Cycle" name="academicYear" options={['2023-24', '2024-25', '2025-26']} />
 //                 <InputGroup label="Date of Birth" name="dob" type="date" />
 
 //                 <div className="md:col-span-2 space-y-2">
-//                   <label className="text-[10px] font-black text-slate-400 uppercase">Residential Address</label>
-//                   <textarea name="address" className="w-full border rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-100 min-h-[80px]" placeholder="Enter full address..."></textarea>
+//                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Permanent Address</label>
+//                   <textarea name="address" className="w-full border border-slate-200 rounded-2xl p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-100 min-h-[100px] text-slate-800" placeholder="Street, City, State, ZIP..."></textarea>
 //                 </div>
 
-//                 <div className="border-t pt-6 md:col-span-2"><h3 className="text-sm font-black text-slate-800 mb-4">Guardian Details</h3></div>
+//                 <div className="md:col-span-2 flex items-center gap-4 py-2">
+//                     <div className="h-px bg-slate-100 flex-1"></div>
+//                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Guardian Information</h3>
+//                     <div className="h-px bg-slate-100 flex-1"></div>
+//                 </div>
                 
-//                 <InputGroup label="Guardian Name" name="guardianName" placeholder="Parent/Guardian Name" />
-//                 <InputGroup label="Guardian Phone" name="guardianPhone" placeholder="+91 00000 00000" />
+//                 <InputGroup label="Guardian Name" name="guardianName" placeholder="Father/Mother Name" />
+//                 <InputGroup label="Guardian Contact" name="guardianPhone" placeholder="+91 00000 00000" />
 
-//                 <div className="border-t pt-6 md:col-span-2"><h3 className="text-sm font-black text-slate-800 mb-4">System Credentials</h3></div>
+//                 <div className="md:col-span-2 flex items-center gap-4 py-2">
+//                     <div className="h-px bg-slate-100 flex-1"></div>
+//                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">System Credentials</h3>
+//                     <div className="h-px bg-slate-100 flex-1"></div>
+//                 </div>
                 
-//                 <InputGroup label="Username" name="username" placeholder="johndoe_2024" />
-//                 <InputGroup label="Password" name="password" type="password" placeholder="••••••••" />
+//                 <InputGroup label="Login Username" name="username" placeholder="johndoe_24" />
+//                 <InputGroup label="Login Password" name="password" type="password" placeholder="••••••••" />
 //               </div>
 
-//               <div className="flex justify-end gap-3 pt-6 border-t">
-//                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-8 py-3 rounded-xl font-bold text-xs bg-slate-100 text-slate-600">Discard</button>
-//                 <button type="submit" className="px-12 py-3 rounded-xl font-bold text-xs bg-blue-600 text-white shadow-xl shadow-blue-200">Register Student</button>
+//               <div className="flex justify-end gap-3 pt-8">
+//                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Discard</button>
+//                 <button type="submit" className="px-12 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-blue-600 text-white shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">Finalize Registration</button>
 //               </div>
 //             </form>
 //           </div>
@@ -709,16 +241,26 @@
 
 // const InputGroup = ({ label, name, type = "text", placeholder }) => (
 //   <div className="space-y-2">
-//     <label className="block text-[10px] font-black text-slate-400 uppercase">{label}</label>
-//     <input name={name} type={type} placeholder={placeholder} className="w-full border rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-100 transition-all text-slate-900" required />
+//     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+//     <input 
+//       name={name} 
+//       type={type} 
+//       placeholder={placeholder} 
+//       className="w-full border border-slate-200 rounded-2xl p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-100 transition-all text-slate-800 placeholder:text-slate-300" 
+//       required 
+//     />
 //   </div>
 // );
 
 // const SelectGroup = ({ label, name, options }) => (
 //   <div className="space-y-2">
-//     <label className="block text-[10px] font-black text-slate-400 uppercase">{label}</label>
-//     <select name={name} className="w-full border rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-100 bg-white text-slate-900" required>
-//       <option value="">Select {label}</option>
+//     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+//     <select 
+//       name={name} 
+//       className="w-full border border-slate-200 rounded-2xl p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-100 bg-white text-slate-800 appearance-none cursor-pointer" 
+//       required
+//     >
+//       <option value="">Select Option</option>
 //       {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
 //     </select>
 //   </div>
@@ -729,54 +271,109 @@
 
 
 
-
-
-
-
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import { 
-  Search, Download, Plus, Eye, Edit2, 
-  Users, User, CheckCircle, AlertCircle, Calendar,
-  ChevronLeft, ChevronRight, X, Camera, Mail, Phone,
-  UserCircle, Hash, MapPin, GraduationCap, Trash2 
+  Search, Download, Plus, Users, CheckCircle, 
+  X, Camera, UserCircle, Hash, GraduationCap, Trash2, 
+  Upload, ChevronLeft, ChevronRight 
 } from 'lucide-react';
+
+// --- HELPER: MAP EXCEL HEADERS TO DATABASE KEYS ---
+const mapExcelDataToStudent = (row, batchId) => {
+  return {
+    name: row['Name'] || row['name'] || 'Unknown',
+    enrollmentNo: row['Enrollment'] || row['enrollmentNo'] || null,
+    email: row['Email'] || row['email'] || null,
+    phone: row['Phone'] || row['phone'] || "",
+    semester: parseInt(row['Semester']) || 1,
+    division: row['Division'] || 'A',
+    academicYear: row['Year'] || '2024-25',
+    dob: row['DOB'] || null, 
+    address: row['Address'] || "",
+    guardianName: row['Guardian'] || "",
+    guardianPhone: row['Guardian Contact'] || "",
+    username: row['Username'] || row['Enrollment'] || `user_${Math.floor(Math.random() * 1000)}`, 
+    password: row['Password'] || 'Student@123',
+    status: 'Active',
+    batchId: batchId
+  };
+};
 
 export default function StudentListTable({ batch, students, onAddStudent, onDeleteStudent, isAdmin }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const navigate = useNavigate();
+  const [isImporting, setIsImporting] = useState(false);
+  
+  // PAGINATION STATE
+  const [currentPage, setCurrentPage] = useState(1);
+  const studentsPerPage = 10;
 
-  // 1. DYNAMIC STATISTICS - Updated for Clarity
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
+  // 1. DYNAMIC STATISTICS
   const stats = [
-    { label: 'Total Students', value: students.length, icon: <Users size={16} />, color: 'bg-blue-50 text-blue-600' },
-    { label: 'Current Sem', value: batch.year || '1', icon: <GraduationCap size={16} />, color: 'bg-indigo-50 text-indigo-600' },
-    { label: 'Batch ID', value: batch.batch || '2024', icon: <Hash size={16} />, color: 'bg-slate-50 text-slate-600' },
-    { label: 'Active', value: students.filter(s => s.status === 'Active').length, icon: <CheckCircle size={16} />, color: 'bg-green-50 text-green-600' },
+    { label: 'Total Students', value: students.length, icon: <Users size={18} />, color: 'bg-blue-50 text-blue-600' },
+    { label: 'Current Sem', value: batch.year || '1', icon: <GraduationCap size={18} />, color: 'bg-indigo-50 text-indigo-600' },
+    { label: 'Batch ID', value: batch.batch || '2024', icon: <Hash size={18} />, color: 'bg-slate-50 text-slate-600' },
+    { label: 'Active', value: students.filter(s => s.status === 'Active').length, icon: <CheckCircle size={18} />, color: 'bg-green-50 text-green-600' },
   ];
 
-  // 2. LIVE FILTERING (Search by Name or Enrollment)
+  // 2. LIVE FILTERING
   const filteredStudents = students.filter(s => 
     s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.enrollmentNo?.toString().toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // 3. RELATIONAL FORM SUBMISSION
+  // 3. PAGINATION CALCULATIONS
+  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
+  const indexOfLastStudent = currentPage * studentsPerPage;
+  const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
+  const currentStudents = filteredStudents.slice(indexOfFirstStudent, indexOfLastStudent);
+
+  // 4. BULK EXCEL UPLOAD LOGIC
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      setIsImporting(true);
+      const bstr = evt.target.result;
+      const workbook = XLSX.read(bstr, { type: 'binary' });
+      const ws = workbook.Sheets[workbook.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws);
+
+      for (const row of data) {
+        try {
+          const studentData = mapExcelDataToStudent(row, batch.id);
+          await onAddStudent(studentData); 
+        } catch (err) {
+          console.error("Failed to import student:", row.Name, err);
+        }
+      }
+
+      setIsImporting(false);
+      e.target.value = null; 
+      alert(`Import process finished. Processed ${data.length} rows.`);
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const triggerFileUpload = () => fileInputRef.current.click();
+
+  // 5. MANUAL FORM SUBMISSION
   const handleFormSubmit = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    
-    // Convert "1st Sem" -> 1 for Database Integrity
-    const rawSemester = fd.get('semester');
-    const semesterValue = parseInt(rawSemester) || 1; 
-
     const studentData = {
       name: fd.get('name'),
       enrollmentNo: fd.get('enrollmentNo'),
       email: fd.get('email'),
       phone: fd.get('phone'),
-      semester: semesterValue, 
+      semester: parseInt(fd.get('semester')) || 1, 
       division: fd.get('division'),
       academicYear: fd.get('academicYear'),
       dob: fd.get('dob'),
@@ -798,41 +395,55 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
     <div className="space-y-6 animate-in fade-in duration-500">
       
       {/* STATISTICS CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, idx) => (
-          <div key={idx} className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-2">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
-              <div className={`p-1.5 rounded-lg ${stat.color}`}>{stat.icon}</div>
+          <div key={idx} className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-3">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.label}</p>
+              <div className={`p-2 rounded-lg ${stat.color}`}>{stat.icon}</div>
             </div>
-            <p className="text-xl font-black text-slate-900">{stat.value}</p>
+            <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
           </div>
         ))}
       </div>
 
       {/* TABLE ACTION BAR */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/30">
+        <div className="p-5 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/30">
           <div className="relative flex-1 min-w-[300px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
-              placeholder="Search students..." 
+              placeholder="Search students by name or enrollment..." 
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-xs font-medium border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100"
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-12 pr-4 py-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 transition-all"
             />
           </div>
-          <div className="flex gap-2">
-            <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 bg-white hover:bg-slate-50 uppercase tracking-widest">
-              <Download size={14} /> Export
-            </button>
+          
+          <div className="flex gap-3">
+            <input type="file" accept=".xlsx, .xls" hidden ref={fileInputRef} onChange={handleFileUpload} />
+
             {isAdmin && (
               <button 
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all"
+                onClick={triggerFileUpload}
+                disabled={isImporting}
+                className={`flex items-center gap-2 px-5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${isImporting ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
               >
-                <Plus size={16} /> New Student
+                <Upload size={16} /> {isImporting ? 'Importing...' : 'Import Excel'}
+              </button>
+            )}
+
+            <button className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 uppercase tracking-wider">
+              <Download size={16} /> Export
+            </button>
+            
+            {isAdmin && (
+              <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
+                <Plus size={18} /> New Student
               </button>
             )}
           </div>
@@ -841,52 +452,49 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
         {/* STUDENT TABLE */}
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-slate-50/50 border-b text-[9px] font-black text-slate-400 uppercase tracking-[0.1em]">
+            <thead className="bg-slate-50/50 border-b text-xs font-bold text-slate-500 uppercase tracking-wider">
               <tr>
-                <th className="px-6 py-5">Profile</th>
-                <th className="px-6 py-5 text-center">Enrollment</th>
-                <th className="px-6 py-5 text-center">Academic info</th>
-                <th className="px-6 py-5 text-center">Contact</th>
-                <th className="px-6 py-5 text-center">Status</th>
-                <th className="px-6 py-5 text-right">Actions</th>
+                <th className="px-6 py-6">Student Profile</th>
+                <th className="px-6 py-6 text-center">Enrollment</th>
+                <th className="px-6 py-6 text-center">Academic Info</th>
+                <th className="px-6 py-6 text-center">Contact</th>
+                <th className="px-6 py-6 text-center">Status</th>
+                <th className="px-6 py-6 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredStudents.length > 0 ? filteredStudents.map((s, idx) => (
+            <tbody className="divide-y divide-slate-100">
+              {currentStudents.length > 0 ? currentStudents.map((s, idx) => (
                 <tr key={s.id || idx} className="hover:bg-blue-50/30 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="size-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-black text-xs">
+                  <td className="px-6 py-5">
+                    <div className="flex items-center gap-4">
+                      <div className="size-11 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">
                         {s.name?.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-xs font-black text-slate-800">{s.name}</p>
-                        <p className="text-[10px] text-slate-400 font-medium">{s.email}</p>
+                        <p className="text-sm font-bold text-slate-800">{s.name}</p>
+                        <p className="text-xs text-slate-500 font-medium">{s.email}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center text-[11px] font-black text-slate-600">{s.enrollmentNo}</td>
-                  <td className="px-6 py-4 text-center text-[10px] font-bold text-slate-500">
-                    <span className="bg-slate-100 px-2 py-0.5 rounded text-blue-600 uppercase">Sem {s.semester}</span>
-                    <span className="ml-2">Div {s.division}</span>
+                  <td className="px-6 py-5 text-center text-sm font-bold text-slate-600">{s.enrollmentNo}</td>
+                  <td className="px-6 py-5 text-center">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">Sem {s.semester}</span>
+                      <span className="text-xs text-slate-500 font-bold uppercase tracking-tighter">Division {s.division}</span>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-center text-[10px] font-bold text-slate-500">{s.phone}</td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-[9px] font-black px-2.5 py-1 rounded-full uppercase bg-green-100 text-green-700 border border-green-200">Active</span>
+                  <td className="px-6 py-5 text-center text-sm font-medium text-slate-500">{s.phone}</td>
+                  <td className="px-6 py-5 text-center">
+                    <span className="text-xs font-bold px-3 py-1 rounded-full uppercase bg-green-100 text-green-700 border border-green-200">Active</span>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-1">
-                      <button 
-                        onClick={() => navigate(`/student-portal/${s.id}`)} 
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                        title="View Full Profile"
-                      >
-                        <UserCircle size={18}/>
+                  <td className="px-6 py-5 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => navigate(`/student-portal/${s.id}`)} className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                        <UserCircle size={22}/>
                       </button>
-
                       {isAdmin && (
-                        <button onClick={() => onDeleteStudent(s.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
-                          <Trash2 size={18}/>
+                        <button onClick={() => onDeleteStudent(s.id)} className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                          <Trash2 size={22}/>
                         </button>
                       )}
                     </div>
@@ -894,7 +502,7 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan="6" className="px-6 py-20 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">
+                  <td colSpan="6" className="px-6 py-24 text-center text-slate-400 text-sm font-bold uppercase tracking-widest">
                     No students found in this batch
                   </td>
                 </tr>
@@ -902,70 +510,78 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
             </tbody>
           </table>
         </div>
+
+        {/* PAGINATION FOOTER */}
+        {filteredStudents.length > studentsPerPage && (
+          <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Showing {indexOfFirstStudent + 1} to {Math.min(indexOfLastStudent, filteredStudents.length)} of {filteredStudents.length} Students
+            </p>
+            <div className="flex items-center gap-2">
+              <button 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => p - 1)}
+                className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 disabled:opacity-30 hover:bg-slate-100 transition-all"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`size-10 rounded-xl text-xs font-bold transition-all ${currentPage === i + 1 ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => p + 1)}
+                className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 disabled:opacity-30 hover:bg-slate-100 transition-all"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* DETAILED FORM MODAL */}
+      {/* REGISTRATION MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsModalOpen(false)} />
-          <div className="relative bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 max-h-[90vh] flex flex-col">
-            <div className="p-8 border-b bg-white flex justify-between items-center">
+          <div className="relative bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+            <div className="p-10 border-b flex justify-between items-center bg-white">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Registration</h2>
-                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1">Add Student to {batch.dept} • {batch.batch}</p>
+                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Student Registration</h2>
+                <p className="text-sm font-bold text-blue-600 uppercase tracking-widest mt-1">Batch: {batch.dept} • {batch.batch}</p>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors">
-                <X size={20} />
+              <button onClick={() => setIsModalOpen(false)} className="p-3 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors">
+                <X size={24} />
               </button>
             </div>
-
-            <form onSubmit={handleFormSubmit} className="p-8 space-y-8 overflow-y-auto text-left">
-              <div className="flex flex-col items-center py-6 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
-                <div className="size-20 rounded-full bg-white shadow-inner flex items-center justify-center relative border border-slate-100">
-                  <Camera size={24} className="text-slate-200" />
-                </div>
-                <p className="text-[10px] font-black text-slate-400 mt-3 uppercase tracking-widest">Upload Identity Photo</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                <InputGroup label="Full Name" name="name" placeholder="John Doe" />
-                <InputGroup label="Enrollment No" name="enrollmentNo" placeholder="ENR2024001" />
-                <InputGroup label="Institutional Email" name="email" type="email" placeholder="john@college.edu" />
+            <form onSubmit={handleFormSubmit} className="p-10 space-y-10 overflow-y-auto text-left">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+                <InputGroup label="Full Name" name="name" placeholder="Enter Full Name" />
+                <InputGroup label="Enrollment No" name="enrollmentNo" placeholder="e.g. ENR2024001" />
+                <InputGroup label="Institutional Email" name="email" type="email" placeholder="student@college.edu" />
                 <InputGroup label="Contact Number" name="phone" placeholder="+91 00000 00000" />
-                
-                <SelectGroup label="Semester" name="semester" options={['1st Sem', '2nd Sem', '3rd Sem', '4th Sem', '5th Sem', '6th Sem']} />
+                <SelectGroup label="Semester" name="semester" options={['1', '2', '3', '4', '5', '6']} />
                 <SelectGroup label="Division" name="division" options={['A', 'B', 'C', 'D']} />
-                
                 <SelectGroup label="Academic Cycle" name="academicYear" options={['2023-24', '2024-25', '2025-26']} />
                 <InputGroup label="Date of Birth" name="dob" type="date" />
-
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Permanent Address</label>
-                  <textarea name="address" className="w-full border border-slate-200 rounded-2xl p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-100 min-h-[100px] text-slate-800" placeholder="Street, City, State, ZIP..."></textarea>
+                <div className="md:col-span-2 space-y-3">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Permanent Address</label>
+                  <textarea name="address" className="w-full border-2 border-slate-100 rounded-2xl p-5 text-sm font-medium outline-none focus:border-blue-200 transition-all min-h-[120px] text-slate-800" placeholder="Street, City, State, ZIP..."></textarea>
                 </div>
-
-                <div className="md:col-span-2 flex items-center gap-4 py-2">
-                    <div className="h-px bg-slate-100 flex-1"></div>
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Guardian Information</h3>
-                    <div className="h-px bg-slate-100 flex-1"></div>
-                </div>
-                
                 <InputGroup label="Guardian Name" name="guardianName" placeholder="Father/Mother Name" />
                 <InputGroup label="Guardian Contact" name="guardianPhone" placeholder="+91 00000 00000" />
-
-                <div className="md:col-span-2 flex items-center gap-4 py-2">
-                    <div className="h-px bg-slate-100 flex-1"></div>
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">System Credentials</h3>
-                    <div className="h-px bg-slate-100 flex-1"></div>
-                </div>
-                
-                <InputGroup label="Login Username" name="username" placeholder="johndoe_24" />
-                <InputGroup label="Login Password" name="password" type="password" placeholder="••••••••" />
+                <InputGroup label="System Username" name="username" placeholder="johndoe_24" />
+                <InputGroup label="System Password" name="password" type="password" placeholder="••••••••" />
               </div>
-
-              <div className="flex justify-end gap-3 pt-8">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Discard</button>
-                <button type="submit" className="px-12 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-blue-600 text-white shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">Finalize Registration</button>
+              <div className="flex justify-end gap-4 pt-4">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-10 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Cancel</button>
+                <button type="submit" className="px-14 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider bg-blue-600 text-white shadow-xl hover:bg-blue-700 transition-all">Submit Enrollment</button>
               </div>
             </form>
           </div>
@@ -975,25 +591,26 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
   );
 }
 
+// --- REUSABLE UI COMPONENTS ---
 const InputGroup = ({ label, name, type = "text", placeholder }) => (
-  <div className="space-y-2">
-    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+  <div className="space-y-3">
+    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</label>
     <input 
       name={name} 
       type={type} 
       placeholder={placeholder} 
-      className="w-full border border-slate-200 rounded-2xl p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-100 transition-all text-slate-800 placeholder:text-slate-300" 
+      className="w-full border-2 border-slate-100 rounded-2xl p-5 text-sm font-medium outline-none focus:border-blue-200 transition-all text-slate-800" 
       required 
     />
   </div>
 );
 
 const SelectGroup = ({ label, name, options }) => (
-  <div className="space-y-2">
-    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+  <div className="space-y-3">
+    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</label>
     <select 
       name={name} 
-      className="w-full border border-slate-200 rounded-2xl p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-100 bg-white text-slate-800 appearance-none cursor-pointer" 
+      className="w-full border-2 border-slate-100 rounded-2xl p-5 text-sm font-medium outline-none focus:border-blue-200 bg-white text-slate-800 transition-all appearance-none" 
       required
     >
       <option value="">Select Option</option>

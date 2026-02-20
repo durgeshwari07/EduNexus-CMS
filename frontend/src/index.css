@@ -18,3 +18,16 @@
     @apply font-black tracking-tight;
   }
 }
+
+
+
+
+
+.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Sticky logic for the Roll No and Name columns */
+.sticky-col-1 { position: sticky; left: 0; z-index: 20; background: white; }
+.sticky-col-2 { position: sticky; left: 100px; z-index: 20; background: white; border-right: 2px solid #e2e8f0; }

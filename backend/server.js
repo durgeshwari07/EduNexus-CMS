@@ -1,9 +1,11 @@
+require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const nodemailer = require("nodemailer");
 
 const app = express();
 app.use(cors());
@@ -30,49 +32,211 @@ const db = mysql.createPool({
     connectionLimit: 10
 });
 
-// --- 3. AUTHENTICATION & OTP ---
-let otpCache = {}; 
+// // --- 3. AUTHENTICATION & OTP ---
+// let otpCache = {}; 
 
-app.post('/api/auth/request-otp', async (req, res) => {
-    // Convert email to lowercase to prevent "Invalid OTP" mismatches
-    const { email, password, role } = req.body;
-    const lowerEmail = email.toLowerCase(); 
+// app.post('/api/auth/request-otp', async (req, res) => {
+//     // Convert email to lowercase to prevent "Invalid OTP" mismatches
+//     const { email, password, role } = req.body;
+//     const lowerEmail = email.toLowerCase(); 
 
-    try {
-        let table = role === 'admin' ? 'admins' : 'teachers';
-        const [user] = await db.query(`SELECT * FROM ${table} WHERE LOWER(email) = ? AND password = ?`, [lowerEmail, password]);
+//     try {
+//         let table = role === 'admin' ? 'admins' : 'teachers';
+//         const [user] = await db.query(`SELECT * FROM ${table} WHERE LOWER(email) = ? AND password = ?`, [lowerEmail, password]);
 
-        if (user.length > 0) {
-            // Block teachers if account status is not Active
-            if (role === 'teacher' && user[0].status !== 'Active') {
-                return res.status(403).json({ success: false, message: "Teacher account pending approval." });
-            }
+//         if (user.length > 0) {
+//             // Block teachers if account status is not Active
+//             if (role === 'teacher' && user[0].status !== 'Active') {
+//                 return res.status(403).json({ success: false, message: "Teacher account pending approval." });
+//             }
             
-            const otp = Math.floor(1000 + Math.random() * 9000).toString();
-            // Store session with normalized lowercase email key
-            otpCache[lowerEmail] = { otp, userData: user[0], role };
+//             const otp = Math.floor(1000 + Math.random() * 9000).toString();
+//             // Store session with normalized lowercase email key
+//             otpCache[lowerEmail] = { otp, userData: user[0], role };
             
-            console.log(`🔑 OTP for ${lowerEmail}: ${otp}`); 
-            res.json({ success: true, message: "OTP generated" });
-        } else {
-            res.status(401).json({ success: false, message: "Invalid credentials" });
-        }
-    } catch (err) { res.status(500).json({ error: "Auth Database Error" }); }
+//             console.log(`🔑 OTP for ${lowerEmail}: ${otp}`); 
+//             res.json({ success: true, message: "OTP generated" });
+//         } else {
+//             res.status(401).json({ success: false, message: "Invalid credentials" });
+//         }
+//     } catch (err) { res.status(500).json({ error: "Auth Database Error" }); }
+// });
+
+// app.post('/api/auth/verify-otp', async (req, res) => {
+//     const { email, otp } = req.body;
+//     const lowerEmail = email.toLowerCase();
+//     const session = otpCache[lowerEmail];
+
+//     if (session && session.otp === otp) {
+//         // Return user data and role to trigger frontend redirection
+//         res.json({ success: true, user: session.userData, role: session.role });
+//         delete otpCache[lowerEmail]; 
+//     } else {
+//         res.status(401).json({ success: false, message: "Invalid OTP" });
+//     }
+// });
+
+
+// =================================================
+// 3️⃣ EMAIL CONFIG (.env)
+// =================================================
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
 });
 
-app.post('/api/auth/verify-otp', async (req, res) => {
+// Optional: verify email connection on startup
+transporter.verify(function (error, success) {
+    if (error) {
+        console.log("❌ Email config error:", error);
+    } else {
+        console.log("✅ Email server is ready");
+    }
+});
+
+
+// =================================================
+// 4️⃣ OTP AUTH SYSTEM
+// =================================================
+let otpCache = {};
+
+app.post("/api/auth/request-otp", async (req, res) => {
+
+    const { email, password, role } = req.body;
+
+    if (!email || !password || !role) {
+        return res.status(400).json({
+            success: false,
+            message: "All fields required"
+        });
+    }
+
+    if (!["admin", "teacher"].includes(role)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid role"
+        });
+    }
+
+    const lowerEmail = email.toLowerCase();
+    const table = role === "admin" ? "admins" : "teachers";
+
+    try {
+
+        const [rows] = await db.query(
+            `SELECT * FROM ${table} WHERE LOWER(email)=? AND password=?`,
+            [lowerEmail, password]
+        );
+
+        // console.log("🔍 DB RESULT:", rows);
+
+        if (rows.length === 0) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid credentials for selected role"
+            });
+        }
+
+        const user = rows[0];
+
+        if (role === "teacher" && user.status !== "Active") {
+            return res.status(403).json({
+                success: false,
+                message: "Teacher account pending approval"
+            });
+        }
+
+        // Generate OTP
+        const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
+        otpCache[lowerEmail] = {
+            otp,
+            userData: user,
+            role,
+            expiry: Date.now() + 5 * 60 * 1000
+        };
+
+        console.log("📩 Sending OTP:", otp);
+
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: lowerEmail,
+            subject: "College System OTP Verification",
+            html: `
+                <h2>Login Verification</h2>
+                <p>Your OTP is:</p>
+                <h1 style="color:#004dc0">${otp}</h1>
+                <p>This OTP is valid for 5 minutes.</p>
+            `
+        });
+
+        res.json({
+            success: true,
+            message: "OTP sent to email"
+        });
+
+    } catch (err) {
+        console.error("❌ AUTH ERROR:", err);
+        res.status(500).json({
+            success: false,
+            message: "Database or Email Error"
+        });
+    }
+});
+
+
+app.post("/api/auth/verify-otp", (req, res) => {
+
     const { email, otp } = req.body;
+
+    if (!email || !otp) {
+        return res.status(400).json({
+            success: false,
+            message: "Email and OTP required"
+        });
+    }
+
     const lowerEmail = email.toLowerCase();
     const session = otpCache[lowerEmail];
 
-    if (session && session.otp === otp) {
-        // Return user data and role to trigger frontend redirection
-        res.json({ success: true, user: session.userData, role: session.role });
-        delete otpCache[lowerEmail]; 
-    } else {
-        res.status(401).json({ success: false, message: "Invalid OTP" });
+    if (!session) {
+        return res.status(401).json({
+            success: false,
+            message: "OTP not found"
+        });
     }
+
+    if (Date.now() > session.expiry) {
+        delete otpCache[lowerEmail];
+        return res.status(401).json({
+            success: false,
+            message: "OTP expired"
+        });
+    }
+
+    if (session.otp !== otp) {
+        return res.status(401).json({
+            success: false,
+            message: "Invalid OTP"
+        });
+    }
+
+    delete otpCache[lowerEmail];
+
+    res.json({
+        success: true,
+        user: session.userData,
+        role: session.role
+    });
 });
+
+
+
+
+
 
 // --- 4. MASTER DASHBOARD SYNC (Admin View) ---
 app.get('/api/dashboard/data', async (req, res) => {
@@ -193,15 +357,66 @@ app.post('/api/batches', async (req, res) => {
 });
 
 // --- STUDENT MANAGEMENT ---
+// app.post('/api/students', async (req, res) => {
+//     const d = req.body;
+//     try {
+//         const sql = `INSERT INTO students (name, enrollmentNo, email, phone, batchId, semester, division, academicYear, dob, address, guardianName, guardianPhone, username, password, status) 
+//                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')`;
+//         await db.query(sql, [d.name, d.enrollmentNo, d.email, d.phone, d.batchId, d.semester, d.division, d.academicYear, d.dob, d.address, d.guardianName, d.guardianPhone, d.username, d.password]);
+//         res.json({ success: true });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+
+// --- 7. CORE MANAGEMENT (STUDENT INSERTION) ---
 app.post('/api/students', async (req, res) => {
     const d = req.body;
+    
+    // Log the attempt to your terminal
+    console.log(`Attempting to add student: ${d.name} (${d.enrollmentNo})`);
+
     try {
-        const sql = `INSERT INTO students (name, enrollmentNo, email, phone, batchId, semester, division, academicYear, dob, address, guardianName, guardianPhone, username, password, status) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')`;
-        await db.query(sql, [d.name, d.enrollmentNo, d.email, d.phone, d.batchId, d.semester, d.division, d.academicYear, d.dob, d.address, d.guardianName, d.guardianPhone, d.username, d.password]);
+        const sql = `INSERT INTO students (
+            name, enrollmentNo, email, phone, batchId, 
+            semester, division, academicYear, dob, address, 
+            guardianName, guardianPhone, username, password, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')`;
+
+        // We use || null to ensure that empty Excel cells don't crash the SQL query
+        const values = [
+            d.name || "Unknown", 
+            d.enrollmentNo || null, 
+            d.email || null, 
+            d.phone || "", 
+            d.batchId || null, 
+            d.semester || 1, 
+            d.division || "A", 
+            d.academicYear || "2024-25", 
+            d.dob || null, 
+            d.address || "", 
+            d.guardianName || "", 
+            d.guardianPhone || "", 
+            d.username || d.enrollmentNo, // Uses enrollment as username if empty
+            d.password || "Student@123"   // Default password
+        ];
+
+        await db.query(sql, values);
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+
+    } catch (err) {
+        // This is crucial: It prints the EXACT MySQL error to your Node terminal
+        console.error("❌ DATABASE INSERTION ERROR:", err.sqlMessage || err.message);
+        
+        res.status(500).json({ 
+            success: false, 
+            message: "Database Error", 
+            error: err.sqlMessage 
+        });
+    }
 });
+
+
+
 
 // --- SUBJECT MANAGEMENT ---
 app.post('/api/subjects', async (req, res) => {
@@ -297,3 +512,12 @@ const PORT = 5000;
 app.listen(PORT, () => {
     console.log(`🚀 SYSTEM OPERATIONAL ON PORT: ${PORT}`);
 });
+
+
+
+
+
+
+
+
+
