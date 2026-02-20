@@ -2,13 +2,15 @@
 // // import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 // // import axios from 'axios';
 
-// // /* --- 1. UI & SHELL --- */
-// // import Home from './Home'; 
-// // import './Home.css';
+// // /* UI & SHELL */
+// // import Navbar from './pages/Navbar';
+// // import Hero from './pages/Hero';
+// // import FeatureShowcase from './pages/Featureshowcase';
+// // import UserGrid from './pages/UserGrid';
 // // import DashboardLayout from './layouts/DashboardLayout';
 // // import StarField from './components/StarField';
 
-// // /* --- 2. PAGES --- */
+// // /* PAGES */
 // // import Login from './pages/Login';
 // // import AdminRegistration from './pages/AdminRegistration';
 // // import TeacherRegistration from './pages/TeacherRegistration';
@@ -20,24 +22,21 @@
 // // import DocumentVerification from './pages/DocumentVerification'; 
 // // import Reports from './pages/Reports'; 
 
-
-// // /* --- 3. PORTALS --- */
+// // /* PORTALS */
 // // import StudentPortal from './assets/StudentPortal';
 // // import FacultyPortal from './assets/FacultyPortal';
 
-// // // API Configuration
+// // // --- API INSTANCE ---
 // // const API = axios.create({ baseURL: 'http://localhost:5000/api' });
 
 // // export default function App() {
 // //   const navigate = useNavigate();
-
-// //   // --- STATE MANAGEMENT ---
 // //   const [role, setRole] = useState(() => JSON.parse(localStorage.getItem('user_role')) || null);
 // //   const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem('current_user')) || null);
 // //   const [page, setPage] = useState('overview');
 // //   const [selectedStudent, setSelectedStudent] = useState(null); 
 
-// //   // Data State
+// //   // --- GLOBAL DATA STATE ---
 // //   const [departments, setDepartments] = useState([]);
 // //   const [approvedTeachers, setApprovedTeachers] = useState([]);
 // //   const [pendingRequests, setPendingRequests] = useState([]);
@@ -46,7 +45,7 @@
 // //   const [subjects, setSubjects] = useState([]);
 // //   const [teacherAssignments, setTeacherAssignments] = useState([]);
 
-// //   // --- 🔄 MASTER SYNC (MySQL) ---
+// //   // --- 🔄 MASTER SYNC (Fetches everything from MySQL) ---
 // //   const syncData = useCallback(async () => {
 // //     try {
 // //       if (!role) return; 
@@ -74,10 +73,11 @@
 // //     localStorage.setItem('user_role', JSON.stringify(userRole));
 // //     localStorage.setItem('current_user', JSON.stringify(userData));
     
+// //     // Redirect logic based on role
 // //     if (userRole === 'admin') {
 // //       navigate('/dashboard');
 // //     } else if (userRole === 'teacher') {
-// //       navigate(`/dashboard`); 
+// //       navigate(`/dashboard`); // Faculty Portal loads inside DashboardLayout
 // //       setPage('faculty-portal');
 // //     }
 // //   };
@@ -92,18 +92,30 @@
 // //   return (
 // //     <div className="App min-h-screen bg-[#0a0a0a] text-[#ccc]">
 // //       <StarField />
-      
 // //       <Routes>
-// //         {/* --- PUBLIC ROUTES --- */}
-// //         <Route path="/" element={<Home />} />
-        
-// //         <Route path="/login" element={
-// //           role ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleAuth} />
+// //         {/* PUBLIC ROUTES */}
+// //         <Route path="/" element={
+// //           <>
+// //             <Navbar 
+// //               onLoginClick={() => navigate('/login')} 
+// //               onLogoClick={() => navigate('/')} 
+// //               onRegisterAdmin={() => navigate('/register/admin')} 
+// //               onRegisterTeacher={() => navigate('/register/teacher')} 
+// //             />
+// //             <main>
+// //               <Hero onLoginClick={() => navigate('/login')} />
+// //               <FeatureShowcase />
+// //               <UserGrid />
+// //             </main>
+// //           </>
 // //         } />
         
+// //         <Route path="/login" element={role ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleAuth} />} />
+        
+// //         {/* EXTERNAL PORTAL ACCESS */}
 // //         <Route path="/student-portal/:id" element={<StudentPortal />} />
 
-// //         {/* --- REGISTRATION FLOW --- */}
+// //         {/* 📝 REGISTRATION FLOW */}
 // //         <Route path="/register/admin" element={
 // //           <AdminRegistration onRegister={async (formData) => {
 // //             try {
@@ -133,7 +145,7 @@
 // //           />
 // //         } />
 
-// //         {/* --- 🛠️ PROTECTED DASHBOARD ROUTES --- */}
+// //         {/* 🛠️ PROTECTED DASHBOARD ROUTES */}
 // //         <Route path="/dashboard/*" element={
 // //           role ? (
 // //             <DashboardLayout 
@@ -143,7 +155,7 @@
 // //               setCurrentPage={setPage} 
 // //               onLogout={handleLogout}
 // //             >
-// //               {/* Conditional Page Rendering */}
+              
 // //               {page === 'overview' && (
 // //                 <Overview 
 // //                   departments={departments} 
@@ -163,9 +175,7 @@
 // //                 />
 // //               )}
               
-// //               {page === 'teachers' && (
-// //                 <Teachers userRole={role} teachers={approvedTeachers} onRefresh={syncData} />
-// //               )}
+// //               {page === 'teachers' && <Teachers userRole={role} teachers={approvedTeachers} onRefresh={syncData} />}
               
 // //               {page === 'students' && (
 // //                 <Students 
@@ -188,12 +198,35 @@
               
 // //               {page === 'subjects' && (
 // //                 <SubjectsManagement 
-// //                   data={{ subjects, courses: departments, users: approvedTeachers, teacherAssignments }} 
-// //                   updateData={async () => { await syncData(); }} 
+// //                   data={{ 
+// //                     subjects: subjects, 
+// //                     courses: departments, 
+// //                     users: approvedTeachers, 
+// //                     teacherAssignments: teacherAssignments 
+// //                   }} 
+// //                   updateData={async (updatedFullData) => { 
+// //                     try {
+// //                       // Logic for ADD, EDIT, DELETE
+// //                       if (updatedFullData.action === 'edit') {
+// //                         await API.put(`/subjects/${updatedFullData.subject.id}`, updatedFullData.subject);
+// //                       } else if (updatedFullData.subjects.length > subjects.length) {
+// //                         const newSub = updatedFullData.subjects[updatedFullData.subjects.length - 1];
+// //                         await API.post('/subjects', newSub);
+// //                       } else if (updatedFullData.subjects.length < subjects.length) {
+// //                         const deletedId = subjects.find(s => !updatedFullData.subjects.find(us => us.id === s.id))?.id;
+// //                         if (deletedId) await API.delete(`/subjects/${deletedId}`);
+// //                       }
+                      
+// //                       // Teacher Assignments
+// //                       if (updatedFullData.teacherAssignments?.length > teacherAssignments.length) {
+// //                         const newAssign = updatedFullData.teacherAssignments[updatedFullData.teacherAssignments.length - 1];
+// //                         await API.post('/assign-teacher', newAssign);
+// //                       }
+// //                       await syncData();
+// //                     } catch (err) { console.error("Subject Operation Error", err); }
+// //                   }} 
 // //                 />
 // //               )}
-
-              
 
 // //               {page === 'faculty-portal' && (
 // //                 <FacultyPortal 
@@ -209,7 +242,9 @@
 // //               {page === 'documents' && <DocumentVerification onRefresh={syncData} />}
               
 // //               {page === 'reports' && (
-// //                 <Reports data={{ departments, teachers: approvedTeachers, students: allStudents, subjects }} />
+// //                 <Reports 
+// //                   data={{ departments, teachers: approvedTeachers, students: allStudents, subjects }} 
+// //                 />
 // //               )}
             
 // //             </DashboardLayout>
@@ -232,13 +267,18 @@
 // import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 // import axios from 'axios';
 
-// /* --- 1. UI & SHELL --- */
-// import Home from './Home'; 
-// import './Home.css';
+// /* --- 1. IMPORT YOUR NEW HOME PAGE --- */
+// import Home from './pages/Home';; 
+
+
+// /* --- 2. IMPORT TEAM UI COMPONENTS --- */
+// /* Based on your project structure screenshot */
+// import Navbar from './pages/Navbar';
+// import Hero from './pages/Hero'; // Kept for reference, but Home replaces this on main route
 // import DashboardLayout from './layouts/DashboardLayout';
 // import StarField from './components/StarField';
 
-// /* --- 2. PAGES --- */
+// /* --- 3. IMPORT PAGES --- */
 // import Login from './pages/Login';
 // import AdminRegistration from './pages/AdminRegistration';
 // import TeacherRegistration from './pages/TeacherRegistration';
@@ -250,17 +290,17 @@
 // import DocumentVerification from './pages/DocumentVerification'; 
 // import Reports from './pages/Reports'; 
 
-// /* --- 3. PORTALS --- */
+// /* --- 4. IMPORT PORTALS (From assets folder) --- */
 // import StudentPortal from './assets/StudentPortal';
 // import FacultyPortal from './assets/FacultyPortal';
 
-// // API Configuration
+// // --- API INSTANCE ---
 // const API = axios.create({ baseURL: 'http://localhost:5000/api' });
 
 // export default function App() {
 //   const navigate = useNavigate();
-
-//   // --- STATE MANAGEMENT ---
+  
+//   // Auth State
 //   const [role, setRole] = useState(() => JSON.parse(localStorage.getItem('user_role')) || null);
 //   const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem('current_user')) || null);
 //   const [page, setPage] = useState('overview');
@@ -275,7 +315,7 @@
 //   const [subjects, setSubjects] = useState([]);
 //   const [teacherAssignments, setTeacherAssignments] = useState([]);
 
-//   // --- 🔄 MASTER SYNC (MySQL) ---
+//   // --- SYNC DATA FUNCTION ---
 //   const syncData = useCallback(async () => {
 //     try {
 //       if (!role) return; 
@@ -283,36 +323,35 @@
 //       if (res.data) {
 //         setDepartments(res.data.departments || []);
 //         setApprovedTeachers(res.data.teachers || []);
-//         setPendingRequests(res.data.pendingTeachers || []); // This now pulls from your 'Pending' status column
+//         setPendingRequests(res.data.pendingTeachers || []);
 //         setAllStudents(res.data.students || []);
 //         setBatches(res.data.batches || []);
 //         setSubjects(res.data.subjects || []);
 //         setTeacherAssignments(res.data.teacherAssignments || []);
 //       }
 //     } catch (err) { 
-//       console.error("Master Sync failed. Ensure Node server and XAMPP are running."); 
+//       console.error("Master Sync failed. Ensure Node server is running."); 
 //     }
 //   }, [role]);
 
 //   useEffect(() => { syncData(); }, [syncData]);
 
-//   // --- AUTH HANDLERS ---
+//   // --- LOGIN HANDLER ---
 //   const handleAuth = (userRole, userData) => {
 //     setRole(userRole);
 //     setCurrentUser(userData);
 //     localStorage.setItem('user_role', JSON.stringify(userRole));
 //     localStorage.setItem('current_user', JSON.stringify(userData));
     
-//     // Logic updated to handle different starting pages
 //     if (userRole === 'admin') {
 //       navigate('/dashboard');
-//       setPage('overview');
 //     } else if (userRole === 'teacher') {
-//       navigate('/dashboard'); 
+//       navigate(`/dashboard`); 
 //       setPage('faculty-portal');
 //     }
 //   };
 
+//   // --- LOGOUT HANDLER ---
 //   const handleLogout = () => {
 //     setRole(null);
 //     setCurrentUser(null);
@@ -322,18 +361,21 @@
 
 //   return (
 //     <div className="App min-h-screen bg-[#0a0a0a] text-[#ccc]">
+//       {/* Background Star Effect */}
 //       <StarField />
       
 //       <Routes>
+//         {/* --- MAIN HOME ROUTE --- */}
+//         {/* This loads your Home.js design when opening the site */}
 //         <Route path="/" element={<Home />} />
         
-//         <Route path="/login" element={
-//           role ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleAuth} />
-//         } />
+//         {/* --- LOGIN ROUTE --- */}
+//         <Route path="/login" element={role ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleAuth} />} />
         
+//         {/* --- PUBLIC PORTAL --- */}
 //         <Route path="/student-portal/:id" element={<StudentPortal />} />
 
-//         {/* --- REGISTRATION FLOW --- */}
+//         {/* --- REGISTRATION ROUTES --- */}
 //         <Route path="/register/admin" element={
 //           <AdminRegistration onRegister={async (formData) => {
 //             try {
@@ -353,20 +395,17 @@
 //             departments={departments} 
 //             onRegister={async (formData) => { 
 //               try { 
-//                 // Updated to point to your new backend endpoint
-//                 const res = await API.post('/register-teacher', formData); 
-//                 if (res.status === 201) { 
-//                   alert("Registration Request Sent! Please wait for Admin approval."); 
+//                 const res = await API.post('/register/teacher', formData); 
+//                 if (res.data.success) { 
+//                   alert("Teacher Registration Sent for Admin Approval!"); 
 //                   navigate('/login'); 
 //                 } 
-//               } catch (err) { 
-//                 alert(err.response?.data?.message || "Registration Failed. Username or Email might be taken."); 
-//               } 
+//               } catch (err) { alert("Registration Failed"); } 
 //             }} 
 //           />
 //         } />
 
-//         {/* --- 🛠️ PROTECTED DASHBOARD ROUTES --- */}
+//         {/* --- DASHBOARD (PROTECTED) --- */}
 //         <Route path="/dashboard/*" element={
 //           role ? (
 //             <DashboardLayout 
@@ -376,18 +415,16 @@
 //               setCurrentPage={setPage} 
 //               onLogout={handleLogout}
 //             >
-//               {/* ADMIN OVERVIEW */}
-//               {page === 'overview' && role === 'admin' && (
+              
+//               {page === 'overview' && (
 //                 <Overview 
 //                   departments={departments} 
 //                   teachersCount={approvedTeachers.length} 
 //                   studentsCount={allStudents.length} 
 //                   pendingTeachers={pendingRequests} 
-//                   onRefresh={syncData} // Added refresh capability
 //                 />
 //               )}
               
-//               {/* DEPARTMENTS */}
 //               {page === 'departments' && (
 //                 <Departments 
 //                   userRole={role} 
@@ -398,17 +435,8 @@
 //                 />
 //               )}
               
-//               {/* TEACHERS MANAGEMENT */}
-//               {page === 'teachers' && (
-//                 <Teachers 
-//                    userRole={role} 
-//                    teachers={approvedTeachers} 
-//                    pendingTeachers={pendingRequests} // Pass pending list for admin to approve
-//                    onRefresh={syncData} 
-//                 />
-//               )}
+//               {page === 'teachers' && <Teachers userRole={role} teachers={approvedTeachers} onRefresh={syncData} />}
               
-//               {/* STUDENTS MANAGEMENT */}
 //               {page === 'students' && (
 //                 <Students 
 //                   userRole={role} 
@@ -430,12 +458,34 @@
               
 //               {page === 'subjects' && (
 //                 <SubjectsManagement 
-//                   data={{ subjects, courses: departments, users: approvedTeachers, teacherAssignments }} 
-//                   updateData={async () => { await syncData(); }} 
+//                   data={{ 
+//                     subjects: subjects, 
+//                     courses: departments, 
+//                     users: approvedTeachers, 
+//                     teacherAssignments: teacherAssignments 
+//                   }} 
+//                   updateData={async (updatedFullData) => { 
+//                     try {
+//                       if (updatedFullData.action === 'edit') {
+//                         await API.put(`/subjects/${updatedFullData.subject.id}`, updatedFullData.subject);
+//                       } else if (updatedFullData.subjects.length > subjects.length) {
+//                         const newSub = updatedFullData.subjects[updatedFullData.subjects.length - 1];
+//                         await API.post('/subjects', newSub);
+//                       } else if (updatedFullData.subjects.length < subjects.length) {
+//                         const deletedId = subjects.find(s => !updatedFullData.subjects.find(us => us.id === s.id))?.id;
+//                         if (deletedId) await API.delete(`/subjects/${deletedId}`);
+//                       }
+                      
+//                       if (updatedFullData.teacherAssignments?.length > teacherAssignments.length) {
+//                         const newAssign = updatedFullData.teacherAssignments[updatedFullData.teacherAssignments.length - 1];
+//                         await API.post('/assign-teacher', newAssign);
+//                       }
+//                       await syncData();
+//                     } catch (err) { console.error("Subject Operation Error", err); }
+//                   }} 
 //                 />
 //               )}
 
-//               {/* FACULTY PORTAL */}
 //               {page === 'faculty-portal' && (
 //                 <FacultyPortal 
 //                   currentUser={currentUser} 
@@ -450,13 +500,16 @@
 //               {page === 'documents' && <DocumentVerification onRefresh={syncData} />}
               
 //               {page === 'reports' && (
-//                 <Reports data={{ departments, teachers: approvedTeachers, students: allStudents, subjects }} />
+//                 <Reports 
+//                   data={{ departments, teachers: approvedTeachers, students: allStudents, subjects }} 
+//                 />
 //               )}
             
 //             </DashboardLayout>
 //           ) : <Navigate to="/login" />
 //         } />
         
+//         {/* Fallback Route */}
 //         <Route path="*" element={<Navigate to="/" replace />} />
 //       </Routes>
 //     </div> 
@@ -464,18 +517,22 @@
 // }
 
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-/* --- 1. UI & SHELL --- */
-import Home from './Home'; 
-import './Home.css';
+/* --- 1. IMPORT YOUR NEW HOME PAGE --- */
+import Home from './pages/Home'; 
+
+
+/* --- 2. IMPORT TEAM UI COMPONENTS --- */
+/* Based on your project structure screenshot */
+import Navbar from './pages/Navbar';
+import Hero from './pages/Hero'; // Kept for reference, but Home replaces this on main route
 import DashboardLayout from './layouts/DashboardLayout';
 import StarField from './components/StarField';
 
-/* --- 2. PAGES --- */
+/* --- 3. IMPORT PAGES --- */
 import Login from './pages/Login';
 import AdminRegistration from './pages/AdminRegistration';
 import TeacherRegistration from './pages/TeacherRegistration';
@@ -487,22 +544,20 @@ import SubjectsManagement from './pages/SubjectsManagement';
 import DocumentVerification from './pages/DocumentVerification'; 
 import Reports from './pages/Reports'; 
 
-/* --- 3. PORTALS --- */
+/* --- 4. IMPORT PORTALS (From assets folder) --- */
 import StudentPortal from './assets/StudentPortal';
 import FacultyPortal from './assets/FacultyPortal';
 
-// API Configuration
+// --- API INSTANCE ---
 const API = axios.create({ baseURL: 'http://localhost:5000/api' });
 
 export default function App() {
   const navigate = useNavigate();
-
-  // --- STATE MANAGEMENT ---
+  
+  // Auth State
   const [role, setRole] = useState(() => JSON.parse(localStorage.getItem('user_role')) || null);
   const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem('current_user')) || null);
-  
-  // Persist the active page tab across refreshes
-  const [page, setPage] = useState(() => localStorage.getItem('active_page') || 'overview');
+  const [page, setPage] = useState('overview');
   const [selectedStudent, setSelectedStudent] = useState(null); 
 
   // Data State
@@ -514,7 +569,7 @@ export default function App() {
   const [subjects, setSubjects] = useState([]);
   const [teacherAssignments, setTeacherAssignments] = useState([]);
 
-  // --- 🔄 MASTER SYNC (MySQL) ---
+  // --- SYNC DATA FUNCTION ---
   const syncData = useCallback(async () => {
     try {
       if (!role) return; 
@@ -522,27 +577,20 @@ export default function App() {
       if (res.data) {
         setDepartments(res.data.departments || []);
         setApprovedTeachers(res.data.teachers || []);
-        setPendingRequests(res.data.pendingTeachers || []); 
+        setPendingRequests(res.data.pendingTeachers || []);
         setAllStudents(res.data.students || []);
         setBatches(res.data.batches || []);
         setSubjects(res.data.subjects || []);
         setTeacherAssignments(res.data.teacherAssignments || []);
       }
     } catch (err) { 
-      console.error("Master Sync failed. Ensure Node server and XAMPP are running."); 
+      console.error("Master Sync failed. Ensure Node server is running."); 
     }
   }, [role]);
 
-  useEffect(() => { 
-    syncData(); 
-  }, [syncData]);
+  useEffect(() => { syncData(); }, [syncData]);
 
-  // Update local storage when page changes
-  useEffect(() => {
-    localStorage.setItem('active_page', page);
-  }, [page]);
-
-  // --- AUTH HANDLERS ---
+  // --- LOGIN HANDLER ---
   const handleAuth = (userRole, userData) => {
     setRole(userRole);
     setCurrentUser(userData);
@@ -551,13 +599,13 @@ export default function App() {
     
     if (userRole === 'admin') {
       navigate('/dashboard');
-      setPage('overview');
     } else if (userRole === 'teacher') {
-      navigate('/dashboard'); 
+      navigate(`/dashboard`); 
       setPage('faculty-portal');
     }
   };
 
+  // --- LOGOUT HANDLER ---
   const handleLogout = () => {
     setRole(null);
     setCurrentUser(null);
@@ -567,18 +615,21 @@ export default function App() {
 
   return (
     <div className="App min-h-screen bg-[#0a0a0a] text-[#ccc]">
+      {/* Background Star Effect */}
       <StarField />
       
       <Routes>
+        {/* --- MAIN HOME ROUTE --- */}
+        {/* This loads your Home.js design when opening the site */}
         <Route path="/" element={<Home />} />
         
-        <Route path="/login" element={
-          role ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleAuth} />
-        } />
+        {/* --- LOGIN ROUTE --- */}
+        <Route path="/login" element={role ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleAuth} />} />
         
+        {/* --- PUBLIC PORTAL --- */}
         <Route path="/student-portal/:id" element={<StudentPortal />} />
 
-        {/* --- REGISTRATION FLOW --- */}
+        {/* --- REGISTRATION ROUTES --- */}
         <Route path="/register/admin" element={
           <AdminRegistration onRegister={async (formData) => {
             try {
@@ -598,20 +649,17 @@ export default function App() {
             departments={departments} 
             onRegister={async (formData) => { 
               try { 
-                // Hits the specific route designed for our updated table
-                const res = await API.post('/register-teacher', formData); 
-                if (res.status === 201) { 
-                  alert("Registration request sent! Please wait for Admin approval."); 
+                const res = await API.post('/register/teacher', formData); 
+                if (res.data.success) { 
+                  alert("Teacher Registration Sent for Admin Approval!"); 
                   navigate('/login'); 
                 } 
-              } catch (err) { 
-                alert(err.response?.data?.message || "Registration Failed. Username or Email might be taken."); 
-              } 
+              } catch (err) { alert("Registration Failed"); } 
             }} 
           />
         } />
 
-        {/* --- 🛠️ PROTECTED DASHBOARD ROUTES --- */}
+        {/* --- DASHBOARD (PROTECTED) --- */}
         <Route path="/dashboard/*" element={
           role ? (
             <DashboardLayout 
@@ -621,18 +669,16 @@ export default function App() {
               setCurrentPage={setPage} 
               onLogout={handleLogout}
             >
-              {/* ADMIN OVERVIEW */}
-              {page === 'overview' && role === 'admin' && (
+              
+              {page === 'overview' && (
                 <Overview 
                   departments={departments} 
                   teachersCount={approvedTeachers.length} 
                   studentsCount={allStudents.length} 
                   pendingTeachers={pendingRequests} 
-                  onRefresh={syncData} 
                 />
               )}
               
-              {/* DEPARTMENTS */}
               {page === 'departments' && (
                 <Departments 
                   userRole={role} 
@@ -643,17 +689,8 @@ export default function App() {
                 />
               )}
               
-              {/* TEACHERS MANAGEMENT (Now includes Pending Requests) */}
-              {page === 'teachers' && (
-                <Teachers 
-                   userRole={role} 
-                   teachers={approvedTeachers} 
-                   pendingTeachers={pendingRequests} 
-                   onRefresh={syncData} 
-                />
-              )}
+              {page === 'teachers' && <Teachers userRole={role} teachers={approvedTeachers} onRefresh={syncData} />}
               
-              {/* STUDENTS MANAGEMENT */}
               {page === 'students' && (
                 <Students 
                   userRole={role} 
@@ -675,12 +712,34 @@ export default function App() {
               
               {page === 'subjects' && (
                 <SubjectsManagement 
-                  data={{ subjects, courses: departments, users: approvedTeachers, teacherAssignments }} 
-                  updateData={async () => { await syncData(); }} 
+                  data={{ 
+                    subjects: subjects, 
+                    courses: departments, 
+                    users: approvedTeachers, 
+                    teacherAssignments: teacherAssignments 
+                  }} 
+                  updateData={async (updatedFullData) => { 
+                    try {
+                      if (updatedFullData.action === 'edit') {
+                        await API.put(`/subjects/${updatedFullData.subject.id}`, updatedFullData.subject);
+                      } else if (updatedFullData.subjects.length > subjects.length) {
+                        const newSub = updatedFullData.subjects[updatedFullData.subjects.length - 1];
+                        await API.post('/subjects', newSub);
+                      } else if (updatedFullData.subjects.length < subjects.length) {
+                        const deletedId = subjects.find(s => !updatedFullData.subjects.find(us => us.id === s.id))?.id;
+                        if (deletedId) await API.delete(`/subjects/${deletedId}`);
+                      }
+                      
+                      if (updatedFullData.teacherAssignments?.length > teacherAssignments.length) {
+                        const newAssign = updatedFullData.teacherAssignments[updatedFullData.teacherAssignments.length - 1];
+                        await API.post('/assign-teacher', newAssign);
+                      }
+                      await syncData();
+                    } catch (err) { console.error("Subject Operation Error", err); }
+                  }} 
                 />
               )}
 
-              {/* FACULTY PORTAL (Welcome Logic) */}
               {page === 'faculty-portal' && (
                 <FacultyPortal 
                   currentUser={currentUser} 
@@ -695,13 +754,16 @@ export default function App() {
               {page === 'documents' && <DocumentVerification onRefresh={syncData} />}
               
               {page === 'reports' && (
-                <Reports data={{ departments, teachers: approvedTeachers, students: allStudents, subjects }} />
+                <Reports 
+                  data={{ departments, teachers: approvedTeachers, students: allStudents, subjects }} 
+                />
               )}
             
             </DashboardLayout>
           ) : <Navigate to="/login" />
         } />
         
+        {/* Fallback Route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div> 
