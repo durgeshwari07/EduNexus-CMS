@@ -1,85 +1,549 @@
+// require('dotenv').config();
+// const express = require('express');
+// const mysql = require('mysql2/promise');
+// const cors = require('cors');
+// const multer = require('multer');
+// const path = require('path');
+// const fs = require('fs');
+// const nodemailer = require("nodemailer");
+
+// const app = express();
+// app.use(cors());
+// app.use(express.json());
+
+// // --- 1. FILE UPLOAD CONFIGURATION ---
+// const uploadDir = './uploads';
+// if (!fs.existsSync(uploadDir)) { fs.mkdirSync(uploadDir); }
+
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => cb(null, 'uploads/'),
+//     filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+// });
+// const upload = multer({ storage });
+// app.use('/uploads', express.static('uploads'));
+
+// // --- 2. DATABASE CONNECTION ---
+// const db = mysql.createPool({
+//     host: 'localhost',
+//     user: 'root',
+//     password: '', 
+//     database: 'college_system',
+//     waitForConnections: true,
+//     connectionLimit: 10
+// });
+
+// // // --- 3. AUTHENTICATION & OTP ---
+// // let otpCache = {}; 
+
+// // app.post('/api/auth/request-otp', async (req, res) => {
+// //     // Convert email to lowercase to prevent "Invalid OTP" mismatches
+// //     const { email, password, role } = req.body;
+// //     const lowerEmail = email.toLowerCase(); 
+
+// //     try {
+// //         let table = role === 'admin' ? 'admins' : 'teachers';
+// //         const [user] = await db.query(`SELECT * FROM ${table} WHERE LOWER(email) = ? AND password = ?`, [lowerEmail, password]);
+
+// //         if (user.length > 0) {
+// //             // Block teachers if account status is not Active
+// //             if (role === 'teacher' && user[0].status !== 'Active') {
+// //                 return res.status(403).json({ success: false, message: "Teacher account pending approval." });
+// //             }
+            
+// //             const otp = Math.floor(1000 + Math.random() * 9000).toString();
+// //             // Store session with normalized lowercase email key
+// //             otpCache[lowerEmail] = { otp, userData: user[0], role };
+            
+// //             console.log(`🔑 OTP for ${lowerEmail}: ${otp}`); 
+// //             res.json({ success: true, message: "OTP generated" });
+// //         } else {
+// //             res.status(401).json({ success: false, message: "Invalid credentials" });
+// //         }
+// //     } catch (err) { res.status(500).json({ error: "Auth Database Error" }); }
+// // });
+
+// // app.post('/api/auth/verify-otp', async (req, res) => {
+// //     const { email, otp } = req.body;
+// //     const lowerEmail = email.toLowerCase();
+// //     const session = otpCache[lowerEmail];
+
+// //     if (session && session.otp === otp) {
+// //         // Return user data and role to trigger frontend redirection
+// //         res.json({ success: true, user: session.userData, role: session.role });
+// //         delete otpCache[lowerEmail]; 
+// //     } else {
+// //         res.status(401).json({ success: false, message: "Invalid OTP" });
+// //     }
+// // });
+
+
+// // =================================================
+// // 3️⃣ EMAIL CONFIG (.env)
+// // =================================================
+// const transporter = nodemailer.createTransport({
+//     service: "gmail",
+//     auth: {
+//         user: process.env.EMAIL_USER,
+//         pass: process.env.EMAIL_PASS
+//     }
+// });
+
+// // Optional: verify email connection on startup
+// transporter.verify(function (error, success) {
+//     if (error) {
+//         console.log("❌ Email config error:", error);
+//     } else {
+//         console.log("✅ Email server is ready");
+//     }
+// });
+
+
+// // =================================================
+// // 4️⃣ OTP AUTH SYSTEM
+// // =================================================
+// let otpCache = {};
+
+// app.post("/api/auth/request-otp", async (req, res) => {
+
+//     const { email, password, role } = req.body;
+
+//     if (!email || !password || !role) {
+//         return res.status(400).json({
+//             success: false,
+//             message: "All fields required"
+//         });
+//     }
+
+//     if (!["admin", "teacher"].includes(role)) {
+//         return res.status(400).json({
+//             success: false,
+//             message: "Invalid role"
+//         });
+//     }
+
+//     const lowerEmail = email.toLowerCase();
+//     const table = role === "admin" ? "admins" : "teachers";
+
+//     try {
+
+//         const [rows] = await db.query(
+//             `SELECT * FROM ${table} WHERE LOWER(email)=? AND password=?`,
+//             [lowerEmail, password]
+//         );
+
+//         // console.log("🔍 DB RESULT:", rows);
+
+//         if (rows.length === 0) {
+//             return res.status(401).json({
+//                 success: false,
+//                 message: "Invalid credentials for selected role"
+//             });
+//         }
+
+//         const user = rows[0];
+
+//         if (role === "teacher" && user.status !== "Active") {
+//             return res.status(403).json({
+//                 success: false,
+//                 message: "Teacher account pending approval"
+//             });
+//         }
+
+//         // Generate OTP
+//         const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
+//         otpCache[lowerEmail] = {
+//             otp,
+//             userData: user,
+//             role,
+//             expiry: Date.now() + 5 * 60 * 1000
+//         };
+
+//         console.log("📩 Sending OTP:", otp);
+
+//         await transporter.sendMail({
+//             from: process.env.EMAIL_USER,
+//             to: lowerEmail,
+//             subject: "College System OTP Verification",
+//             html: `
+//                 <h2>Login Verification</h2>
+//                 <p>Your OTP is:</p>
+//                 <h1 style="color:#004dc0">${otp}</h1>
+//                 <p>This OTP is valid for 5 minutes.</p>
+//             `
+//         });
+
+//         res.json({
+//             success: true,
+//             message: "OTP sent to email"
+//         });
+
+//     } catch (err) {
+//         console.error("❌ AUTH ERROR:", err);
+//         res.status(500).json({
+//             success: false,
+//             message: "Database or Email Error"
+//         });
+//     }
+// });
+
+
+// app.post("/api/auth/verify-otp", (req, res) => {
+
+//     const { email, otp } = req.body;
+
+//     if (!email || !otp) {
+//         return res.status(400).json({
+//             success: false,
+//             message: "Email and OTP required"
+//         });
+//     }
+
+//     const lowerEmail = email.toLowerCase();
+//     const session = otpCache[lowerEmail];
+
+//     if (!session) {
+//         return res.status(401).json({
+//             success: false,
+//             message: "OTP not found"
+//         });
+//     }
+
+//     if (Date.now() > session.expiry) {
+//         delete otpCache[lowerEmail];
+//         return res.status(401).json({
+//             success: false,
+//             message: "OTP expired"
+//         });
+//     }
+
+//     if (session.otp !== otp) {
+//         return res.status(401).json({
+//             success: false,
+//             message: "Invalid OTP"
+//         });
+//     }
+
+//     delete otpCache[lowerEmail];
+
+//     res.json({
+//         success: true,
+//         user: session.userData,
+//         role: session.role
+//     });
+// });
+
+
+
+
+
+
+// // --- 4. MASTER DASHBOARD SYNC (Admin View) ---
+// app.get('/api/dashboard/data', async (req, res) => {
+//     try {
+//         const [depts] = await db.query('SELECT * FROM departments');
+//         const [teachers] = await db.query(`SELECT id, teacherName as name, email, phone, dept_id, qualification, experience FROM teachers WHERE status = "Active"`);
+//         const [pending] = await db.query('SELECT * FROM teachers WHERE status = "Pending"');
+//         const [students] = await db.query('SELECT * FROM students');
+//         const [batches] = await db.query('SELECT * FROM batches');
+//         const [subjects] = await db.query(`SELECT id, name, code, semester, credits, dept_id as courseId, batchId FROM subjects`);
+//         const [assignments] = await db.query('SELECT * FROM teacher_assignments');
+
+//         res.json({ 
+//             departments: depts, teachers, pendingTeachers: pending,
+//             students, batches, subjects, teacherAssignments: assignments 
+//         });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// // --- 5. FACULTY PORTAL DATA (Teacher View) ---
+// app.get('/api/faculty/data/:username', async (req, res) => {
+//     const { username } = req.params;
+//     try {
+//         const [teacher] = await db.query('SELECT id FROM teachers WHERE username = ?', [username]);
+//         if (teacher.length === 0) return res.status(404).json({ message: "Teacher not found" });
+//         const teacherId = teacher[0].id;
+
+//         // Fetch subjects using the teacher_assignments bridge table
+//         const [assignedSubjects] = await db.query(`
+//             SELECT s.id, s.name, s.code, s.semester, s.batchId 
+//             FROM subjects s
+//             JOIN teacher_assignments ta ON s.id = ta.subjectId
+//             WHERE ta.teacherId = ?`, [teacherId]);
+
+//         const fullData = await Promise.all(assignedSubjects.map(async (sub) => {
+//             // Find students by Batch and Semester to ensure correct class list
+//             const [students] = await db.query(
+//                 'SELECT * FROM students WHERE batchId = ? AND semester = ?', 
+//                 [sub.batchId, sub.semester]
+//             );
+
+//             const studentsWithMarks = await Promise.all(students.map(async (st) => {
+//                 const [m] = await db.query(
+//                     'SELECT * FROM marks WHERE student_id = ? AND subject_id = ?', 
+//                     [st.id, sub.id]
+//                 );
+//                 const marks = m[0] || {};
+//                 return {
+//                     ...st,
+//                     isa: {
+//                         isa1: [marks.isa1 || 0, 0, 0, 0, 0], 
+//                         isa2: [marks.isa2 || 0, 0, 0, 0, 0],
+//                         isa3: [marks.isa3 || 0, 0, 0, 0, 0]
+//                     },
+//                     semMarks: [marks.theory || 0, 0, 0, 0],
+//                     practicalMarks: marks.practical || 0
+//                 };
+//             }));
+//             return { ...sub, students: studentsWithMarks };
+//         }));
+
+//         res.json({ subjects: fullData });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// // --- 6. STUDENT PORTAL DATA ---
+// app.get('/api/students/:id/portal', async (req, res) => {
+//     const { id } = req.params;
+//     try {
+//         const [profile] = await db.query('SELECT * FROM students WHERE id = ?', [id]);
+//         if (profile.length === 0) return res.status(404).json({ message: "Student Not Found" });
+
+//         const [marks] = await db.query(`
+//             SELECT m.*, s.name as subject_name, s.credits 
+//             FROM marks m 
+//             JOIN subjects s ON m.subject_id = s.id 
+//             WHERE m.student_id = ?`, [id]);
+
+//         res.json({ profile: profile[0], marks });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// // --- 7. CORE MANAGEMENT (CRUD ROUTES) ---
+
+// // --- DEPARTMENT MANAGEMENT ---
+// app.post('/api/departments', async (req, res) => {
+//     const { name, code, hod } = req.body;
+//     try {
+//         const [result] = await db.query('INSERT INTO departments (name, code, hod) VALUES (?, ?, ?)', [name, code, hod]);
+//         res.json({ success: true, id: result.insertId });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// app.put('/api/departments/:id', async (req, res) => {
+//     const { id } = req.params;
+//     const { name, code, hod } = req.body;
+//     try {
+//         await db.query('UPDATE departments SET name=?, code=?, hod=? WHERE id=?', [name, code, hod, id]);
+//         res.json({ success: true });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// app.delete('/api/departments/:id', async (req, res) => {
+//     const { id } = req.params;
+//     try {
+//         await db.query('DELETE FROM departments WHERE id = ?', [id]);
+//         res.json({ success: true });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// // --- BATCH MANAGEMENT ---
+// app.post('/api/batches', async (req, res) => {
+//     const { dept, batch, hod, year } = req.body;
+//     try {
+//         const [result] = await db.query('INSERT INTO batches (dept, batch, hod, year) VALUES (?, ?, ?, ?)', [dept, batch, hod, year]);
+//         res.json({ success: true, id: result.insertId });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// // --- STUDENT MANAGEMENT ---
+// // app.post('/api/students', async (req, res) => {
+// //     const d = req.body;
+// //     try {
+// //         const sql = `INSERT INTO students (name, enrollmentNo, email, phone, batchId, semester, division, academicYear, dob, address, guardianName, guardianPhone, username, password, status) 
+// //                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')`;
+// //         await db.query(sql, [d.name, d.enrollmentNo, d.email, d.phone, d.batchId, d.semester, d.division, d.academicYear, d.dob, d.address, d.guardianName, d.guardianPhone, d.username, d.password]);
+// //         res.json({ success: true });
+// //     } catch (err) { res.status(500).json({ error: err.message }); }
+// // });
+
+
+// // --- 7. CORE MANAGEMENT (STUDENT INSERTION) ---
+// app.post('/api/students', async (req, res) => {
+//     const d = req.body;
+    
+//     // Log the attempt to your terminal
+//     console.log(`Attempting to add student: ${d.name} (${d.enrollmentNo})`);
+
+//     try {
+//         const sql = `INSERT INTO students (
+//             name, enrollmentNo, email, phone, batchId, 
+//             semester, division, academicYear, dob, address, 
+//             guardianName, guardianPhone, username, password, status
+//         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')`;
+
+//         // We use || null to ensure that empty Excel cells don't crash the SQL query
+//         const values = [
+//             d.name || "Unknown", 
+//             d.enrollmentNo || null, 
+//             d.email || null, 
+//             d.phone || "", 
+//             d.batchId || null, 
+//             d.semester || 1, 
+//             d.division || "A", 
+//             d.academicYear || "2024-25", 
+//             d.dob || null, 
+//             d.address || "", 
+//             d.guardianName || "", 
+//             d.guardianPhone || "", 
+//             d.username || d.enrollmentNo, // Uses enrollment as username if empty
+//             d.password || "Student@123"   // Default password
+//         ];
+
+//         await db.query(sql, values);
+//         res.json({ success: true });
+
+//     } catch (err) {
+//         // This is crucial: It prints the EXACT MySQL error to your Node terminal
+//         console.error("❌ DATABASE INSERTION ERROR:", err.sqlMessage || err.message);
+        
+//         res.status(500).json({ 
+//             success: false, 
+//             message: "Database Error", 
+//             error: err.sqlMessage 
+//         });
+//     }
+// });
+
+
+
+
+// // --- SUBJECT MANAGEMENT ---
+// app.post('/api/subjects', async (req, res) => {
+//     const { name, code, semester, credits, courseId, batchId } = req.body;
+//     try {
+//         const [result] = await db.query('INSERT INTO subjects (name, code, semester, credits, dept_id, batchId) VALUES (?, ?, ?, ?, ?, ?)', 
+//         [name, code, semester, credits, courseId, batchId]);
+//         res.json({ success: true, id: result.insertId });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// app.put('/api/subjects/:id', async (req, res) => {
+//     const { id } = req.params;
+//     const { name, code, semester, credits, batchId } = req.body;
+//     try {
+//         const sql = `UPDATE subjects SET name=?, code=?, semester=?, credits=?, batchId=? WHERE id=?`;
+//         await db.query(sql, [name, code, semester, credits, batchId, id]);
+//         res.json({ success: true });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// app.delete('/api/subjects/:id', async (req, res) => {
+//     const { id } = req.params;
+//     try {
+//         // Clear teacher assignments linked to subject first
+//         await db.query('DELETE FROM teacher_assignments WHERE subjectId = ?', [id]);
+//         await db.query('DELETE FROM subjects WHERE id = ?', [id]);
+//         res.json({ success: true });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// // --- TEACHER ASSIGNMENT MANAGEMENT ---
+// app.post('/api/assign-teacher', async (req, res) => {
+//     const { subjectId, teacherId, academicYear } = req.body;
+//     try {
+//         const sql = `INSERT INTO teacher_assignments (subjectId, teacherId, academicYearId) VALUES (?, ?, ?)`;
+//         const [result] = await db.query(sql, [subjectId, teacherId, academicYear || '2024-25']);
+//         res.json({ success: true, id: result.insertId });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// app.put('/api/assign-teacher/:id', async (req, res) => {
+//     const { id } = req.params;
+//     const { teacherId, academicYear } = req.body;
+//     try {
+//         const sql = `UPDATE teacher_assignments SET teacherId=?, academicYearId=? WHERE id=?`;
+//         await db.query(sql, [teacherId, academicYear, id]);
+//         res.json({ success: true });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// app.delete('/api/assign-teacher/:id', async (req, res) => {
+//     const { id } = req.params;
+//     try {
+//         await db.query('DELETE FROM teacher_assignments WHERE id = ?', [id]);
+//         res.json({ success: true });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// // --- 8. REGISTRATION & MARKS SAVING ---
+// app.post('/api/register/admin', async (req, res) => {
+//     const d = req.body;
+//     try {
+//         const sql = `INSERT INTO admins (collegeName, collegeCode, collegeEmail, address, academicYear, board, name, phone, email, username, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+//         const [result] = await db.query(sql, [d.collegeName, d.collegeCode, d.collegeEmail, d.address, d.academicYear, d.board, d.name, d.phone, d.email, d.username, d.password]);
+//         res.json({ success: true, user: { id: result.insertId, name: d.name, role: 'admin' } });
+//     } catch (err) { res.status(500).json({ success: false }); }
+// });
+
+// app.post('/api/register/teacher', async (req, res) => {
+//     const d = req.body;
+//     try {
+//         const sql = `INSERT INTO teachers (teacherName, email, phone, dept_id, qualification, experience, username, password, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`;
+//         await db.query(sql, [d.teacherName, d.email, d.phone, d.dept_id, d.qualification, d.experience, d.username, d.password]);
+//         res.json({ success: true });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// app.post('/api/faculty/save-marks', async (req, res) => {
+//     const { studentId, subjectId, semester, marks } = req.body;
+//     try {
+//         // Update marks using 'theory' column and handle duplicates
+//         const sql = `INSERT INTO marks (student_id, subject_id, semester, isa1, isa2, isa3, theory, practical) 
+//                      VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
+//                      ON DUPLICATE KEY UPDATE isa1=VALUES(isa1), isa2=VALUES(isa2), isa3=VALUES(isa3), theory=VALUES(theory), practical=VALUES(practical)`;
+//         await db.query(sql, [studentId, subjectId, semester, marks.isa1 || 0, marks.isa2 || 0, marks.isa3 || 0, marks.theory || 0, marks.practical || 0]);
+//         res.json({ success: true });
+//     } catch (err) { res.status(500).json({ error: err.message }); }
+// });
+
+// // --- 9. START SERVER ---
+// const PORT = 5000;
+// app.listen(PORT, () => {
+//     console.log(`🚀 SYSTEM OPERATIONAL ON PORT: ${PORT}`);
+// });
+
+
+
+
+
+
+
+
+
+
 require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const bcrypt = require('bcryptjs');
 const nodemailer = require("nodemailer");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- 1. FILE UPLOAD CONFIGURATION ---
-const uploadDir = './uploads';
-if (!fs.existsSync(uploadDir)) { fs.mkdirSync(uploadDir); }
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
-    filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
-});
-const upload = multer({ storage });
-app.use('/uploads', express.static('uploads'));
-
-// --- 2. DATABASE CONNECTION ---
+// --- 1. DATABASE CONNECTION ---
 const db = mysql.createPool({
     host: 'localhost',
     user: 'root',
     password: '', 
-    database: 'college_system',
+    database: 'college_system', 
     waitForConnections: true,
     connectionLimit: 10
 });
 
-// // --- 3. AUTHENTICATION & OTP ---
-// let otpCache = {}; 
-
-// app.post('/api/auth/request-otp', async (req, res) => {
-//     // Convert email to lowercase to prevent "Invalid OTP" mismatches
-//     const { email, password, role } = req.body;
-//     const lowerEmail = email.toLowerCase(); 
-
-//     try {
-//         let table = role === 'admin' ? 'admins' : 'teachers';
-//         const [user] = await db.query(`SELECT * FROM ${table} WHERE LOWER(email) = ? AND password = ?`, [lowerEmail, password]);
-
-//         if (user.length > 0) {
-//             // Block teachers if account status is not Active
-//             if (role === 'teacher' && user[0].status !== 'Active') {
-//                 return res.status(403).json({ success: false, message: "Teacher account pending approval." });
-//             }
-            
-//             const otp = Math.floor(1000 + Math.random() * 9000).toString();
-//             // Store session with normalized lowercase email key
-//             otpCache[lowerEmail] = { otp, userData: user[0], role };
-            
-//             console.log(`🔑 OTP for ${lowerEmail}: ${otp}`); 
-//             res.json({ success: true, message: "OTP generated" });
-//         } else {
-//             res.status(401).json({ success: false, message: "Invalid credentials" });
-//         }
-//     } catch (err) { res.status(500).json({ error: "Auth Database Error" }); }
-// });
-
-// app.post('/api/auth/verify-otp', async (req, res) => {
-//     const { email, otp } = req.body;
-//     const lowerEmail = email.toLowerCase();
-//     const session = otpCache[lowerEmail];
-
-//     if (session && session.otp === otp) {
-//         // Return user data and role to trigger frontend redirection
-//         res.json({ success: true, user: session.userData, role: session.role });
-//         delete otpCache[lowerEmail]; 
-//     } else {
-//         res.status(401).json({ success: false, message: "Invalid OTP" });
-//     }
-// });
-
-
-// =================================================
-// 3️⃣ EMAIL CONFIG (.env)
-// =================================================
+// --- 2. EMAIL CONFIG ---
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -88,436 +552,100 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Optional: verify email connection on startup
-transporter.verify(function (error, success) {
-    if (error) {
-        console.log("❌ Email config error:", error);
-    } else {
-        console.log("✅ Email server is ready");
-    }
-});
-
-
-// =================================================
-// 4️⃣ OTP AUTH SYSTEM
-// =================================================
 let otpCache = {};
 
+// --- 3. AUTHENTICATION (OTP & VERIFY) ---
 app.post("/api/auth/request-otp", async (req, res) => {
-
     const { email, password, role } = req.body;
-
-    if (!email || !password || !role) {
-        return res.status(400).json({
-            success: false,
-            message: "All fields required"
-        });
-    }
-
-    if (!["admin", "teacher"].includes(role)) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid role"
-        });
-    }
-
     const lowerEmail = email.toLowerCase();
     const table = role === "admin" ? "admins" : "teachers";
 
     try {
-
-        const [rows] = await db.query(
-            `SELECT * FROM ${table} WHERE LOWER(email)=? AND password=?`,
-            [lowerEmail, password]
-        );
-
-        // console.log("🔍 DB RESULT:", rows);
-
-        if (rows.length === 0) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid credentials for selected role"
-            });
-        }
+        const [rows] = await db.query(`SELECT * FROM ${table} WHERE LOWER(email)=?`, [lowerEmail]);
+        if (rows.length === 0) return res.status(401).json({ success: false, message: "User not found" });
 
         const user = rows[0];
+        const isMatch = await bcrypt.compare(password, user.password);
+        const isPlainMatch = (password === user.password); 
 
-        if (role === "teacher" && user.status !== "Active") {
-            return res.status(403).json({
-                success: false,
-                message: "Teacher account pending approval"
-            });
-        }
+        if (!isMatch && !isPlainMatch) return res.status(401).json({ success: false, message: "Invalid credentials" });
+        if (role === "teacher" && user.status !== "Active") return res.status(403).json({ success: false, message: "Account pending approval" });
 
-        // Generate OTP
         const otp = Math.floor(1000 + Math.random() * 9000).toString();
-
-        otpCache[lowerEmail] = {
-            otp,
-            userData: user,
-            role,
-            expiry: Date.now() + 5 * 60 * 1000
-        };
-
-        console.log("📩 Sending OTP:", otp);
+        otpCache[lowerEmail] = { otp, userData: user, role, expiry: Date.now() + 5 * 60 * 1000 };
 
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: lowerEmail,
-            subject: "College System OTP Verification",
-            html: `
-                <h2>Login Verification</h2>
-                <p>Your OTP is:</p>
-                <h1 style="color:#004dc0">${otp}</h1>
-                <p>This OTP is valid for 5 minutes.</p>
-            `
+            subject: "CMS Login Verification",
+            html: `<h1>OTP: ${otp}</h1><p>Valid for 5 minutes.</p>`
         });
 
-        res.json({
-            success: true,
-            message: "OTP sent to email"
-        });
-
-    } catch (err) {
-        console.error("❌ AUTH ERROR:", err);
-        res.status(500).json({
-            success: false,
-            message: "Database or Email Error"
-        });
-    }
+        res.json({ success: true, message: "OTP sent" });
+    } catch (err) { res.status(500).json({ success: false, message: "Server Error" }); }
 });
-
 
 app.post("/api/auth/verify-otp", (req, res) => {
-
     const { email, otp } = req.body;
-
-    if (!email || !otp) {
-        return res.status(400).json({
-            success: false,
-            message: "Email and OTP required"
-        });
-    }
-
     const lowerEmail = email.toLowerCase();
     const session = otpCache[lowerEmail];
+    if (!session || session.otp !== otp || Date.now() > session.expiry) return res.status(401).json({ success: false, message: "Invalid OTP" });
 
-    if (!session) {
-        return res.status(401).json({
-            success: false,
-            message: "OTP not found"
-        });
-    }
-
-    if (Date.now() > session.expiry) {
-        delete otpCache[lowerEmail];
-        return res.status(401).json({
-            success: false,
-            message: "OTP expired"
-        });
-    }
-
-    if (session.otp !== otp) {
-        return res.status(401).json({
-            success: false,
-            message: "Invalid OTP"
-        });
-    }
-
+    const data = session.userData;
     delete otpCache[lowerEmail];
-
-    res.json({
-        success: true,
-        user: session.userData,
-        role: session.role
-    });
+    res.json({ success: true, user: data, role: session.role });
 });
 
-
-
-
-
-
-// --- 4. MASTER DASHBOARD SYNC (Admin View) ---
+// --- 4. MASTER DATA SYNC (ADMIN VIEW) ---
 app.get('/api/dashboard/data', async (req, res) => {
     try {
         const [depts] = await db.query('SELECT * FROM departments');
-        const [teachers] = await db.query(`SELECT id, teacherName as name, email, phone, dept_id, qualification, experience FROM teachers WHERE status = "Active"`);
-        const [pending] = await db.query('SELECT * FROM teachers WHERE status = "Pending"');
+        const [teachers] = await db.query(`SELECT id, CONCAT(first_name, ' ', last_name) as name, email, phone, dept_id, qualification, experience, employmentType FROM teachers WHERE status = "Active"`);
+        const [pending] = await db.query(`SELECT id, first_name, last_name, email, phone, dept_id, qualification, experience, employmentType FROM teachers WHERE status = "Pending"`);
         const [students] = await db.query('SELECT * FROM students');
         const [batches] = await db.query('SELECT * FROM batches');
+        
+        // Aliasing dept_id as courseId for frontend mapping
         const [subjects] = await db.query(`SELECT id, name, code, semester, credits, dept_id as courseId, batchId FROM subjects`);
         const [assignments] = await db.query('SELECT * FROM teacher_assignments');
 
-        res.json({ 
-            departments: depts, teachers, pendingTeachers: pending,
-            students, batches, subjects, teacherAssignments: assignments 
-        });
+        res.json({ departments: depts, teachers, pendingTeachers: pending, students, batches, subjects, teacherAssignments: assignments });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- 5. FACULTY PORTAL DATA (Teacher View) ---
+// --- 5. FACULTY PORTAL ---
 app.get('/api/faculty/data/:username', async (req, res) => {
     const { username } = req.params;
     try {
-        const [teacher] = await db.query('SELECT id FROM teachers WHERE username = ?', [username]);
-        if (teacher.length === 0) return res.status(404).json({ message: "Teacher not found" });
-        const teacherId = teacher[0].id;
+        const [t] = await db.query('SELECT id FROM teachers WHERE username = ?', [username]);
+        if (t.length === 0) return res.status(404).json({ message: "Teacher not found" });
+        const tId = t[0].id;
 
-        // Fetch subjects using the teacher_assignments bridge table
-        const [assignedSubjects] = await db.query(`
-            SELECT s.id, s.name, s.code, s.semester, s.batchId 
-            FROM subjects s
-            JOIN teacher_assignments ta ON s.id = ta.subjectId
-            WHERE ta.teacherId = ?`, [teacherId]);
-
-        const fullData = await Promise.all(assignedSubjects.map(async (sub) => {
-            // Find students by Batch and Semester to ensure correct class list
-            const [students] = await db.query(
-                'SELECT * FROM students WHERE batchId = ? AND semester = ?', 
-                [sub.batchId, sub.semester]
-            );
-
-            const studentsWithMarks = await Promise.all(students.map(async (st) => {
-                const [m] = await db.query(
-                    'SELECT * FROM marks WHERE student_id = ? AND subject_id = ?', 
-                    [st.id, sub.id]
-                );
+        const [assigned] = await db.query(`SELECT s.* FROM subjects s JOIN teacher_assignments ta ON s.id = ta.subjectId WHERE ta.teacherId = ?`, [tId]);
+        const fullData = await Promise.all(assigned.map(async (sub) => {
+            const [st] = await db.query('SELECT * FROM students WHERE batchId = ? AND semester = ?', [sub.batchId, sub.semester]);
+            const stWithMarks = await Promise.all(st.map(async (s) => {
+                const [m] = await db.query('SELECT * FROM marks WHERE student_id = ? AND subject_id = ?', [s.id, sub.id]);
                 const marks = m[0] || {};
-                return {
-                    ...st,
-                    isa: {
-                        isa1: [marks.isa1 || 0, 0, 0, 0, 0], 
-                        isa2: [marks.isa2 || 0, 0, 0, 0, 0],
-                        isa3: [marks.isa3 || 0, 0, 0, 0, 0]
-                    },
-                    semMarks: [marks.theory || 0, 0, 0, 0],
-                    practicalMarks: marks.practical || 0
-                };
+                return { ...s, isa: { isa1: [marks.isa1 || 0], isa2: [marks.isa2 || 0], isa3: [marks.isa3 || 0] }, theory: marks.theory || 0, practical: marks.practical || 0 };
             }));
-            return { ...sub, students: studentsWithMarks };
+            return { ...sub, students: stWithMarks };
         }));
-
         res.json({ subjects: fullData });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- 6. STUDENT PORTAL DATA ---
-app.get('/api/students/:id/portal', async (req, res) => {
-    const { id } = req.params;
-    try {
-        const [profile] = await db.query('SELECT * FROM students WHERE id = ?', [id]);
-        if (profile.length === 0) return res.status(404).json({ message: "Student Not Found" });
-
-        const [marks] = await db.query(`
-            SELECT m.*, s.name as subject_name, s.credits 
-            FROM marks m 
-            JOIN subjects s ON m.subject_id = s.id 
-            WHERE m.student_id = ?`, [id]);
-
-        res.json({ profile: profile[0], marks });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// --- 7. CORE MANAGEMENT (CRUD ROUTES) ---
-
-// --- DEPARTMENT MANAGEMENT ---
-app.post('/api/departments', async (req, res) => {
-    const { name, code, hod } = req.body;
-    try {
-        const [result] = await db.query('INSERT INTO departments (name, code, hod) VALUES (?, ?, ?)', [name, code, hod]);
-        res.json({ success: true, id: result.insertId });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.put('/api/departments/:id', async (req, res) => {
-    const { id } = req.params;
-    const { name, code, hod } = req.body;
-    try {
-        await db.query('UPDATE departments SET name=?, code=?, hod=? WHERE id=?', [name, code, hod, id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete('/api/departments/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        await db.query('DELETE FROM departments WHERE id = ?', [id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// --- BATCH MANAGEMENT ---
-app.post('/api/batches', async (req, res) => {
-    const { dept, batch, hod, year } = req.body;
-    try {
-        const [result] = await db.query('INSERT INTO batches (dept, batch, hod, year) VALUES (?, ?, ?, ?)', [dept, batch, hod, year]);
-        res.json({ success: true, id: result.insertId });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// --- STUDENT MANAGEMENT ---
-// app.post('/api/students', async (req, res) => {
-//     const d = req.body;
-//     try {
-//         const sql = `INSERT INTO students (name, enrollmentNo, email, phone, batchId, semester, division, academicYear, dob, address, guardianName, guardianPhone, username, password, status) 
-//                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')`;
-//         await db.query(sql, [d.name, d.enrollmentNo, d.email, d.phone, d.batchId, d.semester, d.division, d.academicYear, d.dob, d.address, d.guardianName, d.guardianPhone, d.username, d.password]);
-//         res.json({ success: true });
-//     } catch (err) { res.status(500).json({ error: err.message }); }
-// });
-
-
-// --- 7. CORE MANAGEMENT (STUDENT INSERTION) ---
-app.post('/api/students', async (req, res) => {
-    const d = req.body;
-    
-    // Log the attempt to your terminal
-    console.log(`Attempting to add student: ${d.name} (${d.enrollmentNo})`);
-
-    try {
-        const sql = `INSERT INTO students (
-            name, enrollmentNo, email, phone, batchId, 
-            semester, division, academicYear, dob, address, 
-            guardianName, guardianPhone, username, password, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')`;
-
-        // We use || null to ensure that empty Excel cells don't crash the SQL query
-        const values = [
-            d.name || "Unknown", 
-            d.enrollmentNo || null, 
-            d.email || null, 
-            d.phone || "", 
-            d.batchId || null, 
-            d.semester || 1, 
-            d.division || "A", 
-            d.academicYear || "2024-25", 
-            d.dob || null, 
-            d.address || "", 
-            d.guardianName || "", 
-            d.guardianPhone || "", 
-            d.username || d.enrollmentNo, // Uses enrollment as username if empty
-            d.password || "Student@123"   // Default password
-        ];
-
-        await db.query(sql, values);
-        res.json({ success: true });
-
-    } catch (err) {
-        // This is crucial: It prints the EXACT MySQL error to your Node terminal
-        console.error("❌ DATABASE INSERTION ERROR:", err.sqlMessage || err.message);
-        
-        res.status(500).json({ 
-            success: false, 
-            message: "Database Error", 
-            error: err.sqlMessage 
-        });
-    }
-});
-
-
-
-
-// --- SUBJECT MANAGEMENT ---
+// --- 6. CRUD OPS ---
 app.post('/api/subjects', async (req, res) => {
     const { name, code, semester, credits, courseId, batchId } = req.body;
-    try {
-        const [result] = await db.query('INSERT INTO subjects (name, code, semester, credits, dept_id, batchId) VALUES (?, ?, ?, ?, ?, ?)', 
-        [name, code, semester, credits, courseId, batchId]);
-        res.json({ success: true, id: result.insertId });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    await db.query(`INSERT INTO subjects (name, code, semester, credits, dept_id, batchId) VALUES (?, ?, ?, ?, ?, ?)`, [name, code, semester, credits, courseId, batchId]);
+    res.json({ success: true });
 });
 
-app.put('/api/subjects/:id', async (req, res) => {
-    const { id } = req.params;
-    const { name, code, semester, credits, batchId } = req.body;
-    try {
-        const sql = `UPDATE subjects SET name=?, code=?, semester=?, credits=?, batchId=? WHERE id=?`;
-        await db.query(sql, [name, code, semester, credits, batchId, id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete('/api/subjects/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        // Clear teacher assignments linked to subject first
-        await db.query('DELETE FROM teacher_assignments WHERE subjectId = ?', [id]);
-        await db.query('DELETE FROM subjects WHERE id = ?', [id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// --- TEACHER ASSIGNMENT MANAGEMENT ---
 app.post('/api/assign-teacher', async (req, res) => {
     const { subjectId, teacherId, academicYear } = req.body;
-    try {
-        const sql = `INSERT INTO teacher_assignments (subjectId, teacherId, academicYearId) VALUES (?, ?, ?)`;
-        const [result] = await db.query(sql, [subjectId, teacherId, academicYear || '2024-25']);
-        res.json({ success: true, id: result.insertId });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    await db.query(`INSERT INTO teacher_assignments (subjectId, teacherId, academicYearId) VALUES (?, ?, ?)`, [subjectId, teacherId, academicYear || '2025-26']);
+    res.json({ success: true });
 });
 
-app.put('/api/assign-teacher/:id', async (req, res) => {
-    const { id } = req.params;
-    const { teacherId, academicYear } = req.body;
-    try {
-        const sql = `UPDATE teacher_assignments SET teacherId=?, academicYearId=? WHERE id=?`;
-        await db.query(sql, [teacherId, academicYear, id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete('/api/assign-teacher/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        await db.query('DELETE FROM teacher_assignments WHERE id = ?', [id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// --- 8. REGISTRATION & MARKS SAVING ---
-app.post('/api/register/admin', async (req, res) => {
-    const d = req.body;
-    try {
-        const sql = `INSERT INTO admins (collegeName, collegeCode, collegeEmail, address, academicYear, board, name, phone, email, username, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        const [result] = await db.query(sql, [d.collegeName, d.collegeCode, d.collegeEmail, d.address, d.academicYear, d.board, d.name, d.phone, d.email, d.username, d.password]);
-        res.json({ success: true, user: { id: result.insertId, name: d.name, role: 'admin' } });
-    } catch (err) { res.status(500).json({ success: false }); }
-});
-
-app.post('/api/register/teacher', async (req, res) => {
-    const d = req.body;
-    try {
-        const sql = `INSERT INTO teachers (teacherName, email, phone, dept_id, qualification, experience, username, password, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`;
-        await db.query(sql, [d.teacherName, d.email, d.phone, d.dept_id, d.qualification, d.experience, d.username, d.password]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.post('/api/faculty/save-marks', async (req, res) => {
-    const { studentId, subjectId, semester, marks } = req.body;
-    try {
-        // Update marks using 'theory' column and handle duplicates
-        const sql = `INSERT INTO marks (student_id, subject_id, semester, isa1, isa2, isa3, theory, practical) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
-                     ON DUPLICATE KEY UPDATE isa1=VALUES(isa1), isa2=VALUES(isa2), isa3=VALUES(isa3), theory=VALUES(theory), practical=VALUES(practical)`;
-        await db.query(sql, [studentId, subjectId, semester, marks.isa1 || 0, marks.isa2 || 0, marks.isa3 || 0, marks.theory || 0, marks.practical || 0]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// --- 9. START SERVER ---
-const PORT = 5000;
-app.listen(PORT, () => {
-    console.log(`🚀 SYSTEM OPERATIONAL ON PORT: ${PORT}`);
-});
-
-
-
-
-
-
-
-
-
+app.listen(5000, () => console.log(`🚀 CMS BACKEND ONLINE ON PORT 5000`));

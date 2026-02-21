@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import useLocalStorageSync from './useLocalStorageSync';
-// Removed unused imports
+import { useNavigate } from 'react-router-dom';
+import './Portal.css';
 
 const FacultyPortal = () => {
+  const navigate = useNavigate();
   const [db, setDb] = useLocalStorageSync('unidesk_v10_practical', {});
   const [currentUser, setCurrentUser] = useState(null);
   const [view, setView] = useState('login'); // login, dashboard, grading
   const [currentSubIdx, setCurrentSubIdx] = useState(null);
   const [loginError, setLoginError] = useState(false);
-  
-  // Search & Filter State
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterYear, setFilterYear] = useState("All Years");
   
   // Modal States
   const [subjectModalOpen, setSubjectModalOpen] = useState(false);
@@ -19,19 +17,13 @@ const FacultyPortal = () => {
   
   // Subject Creation State
   const [newSubject, setNewSubject] = useState({
-    name: '', 
-    semMax: 100, 
-    hasPractical: false, 
-    practicalMax: 25, 
-    selectedISAs: ['isa1', 'isa2'], 
-    theoryCredits: 4,     // Default 100/25 = 4
-    practicalCredits: 1   // Default 25/25 = 1
+    name: '', semMax: 100, hasPractical: false, practicalMax: 25, selectedISAs: ['isa1', 'isa2']
   });
   const [isaError, setIsaError] = useState(false);
 
   // Grading Modal State
   const [gradingState, setGradingState] = useState({ studentIdx: null, type: null, subType: null });
-  const [modalStudentData, setModalStudentData] = useState(null); 
+  const [modalStudentData, setModalStudentData] = useState(null); // Temp copy for editing
   const [modalError, setModalError] = useState('');
 
   // --- Auth ---
@@ -41,6 +33,7 @@ const FacultyPortal = () => {
     if (!val) { setLoginError(true); return; }
     
     if (!db[val]) {
+      // Initialize new user array in DB
       setDb({ ...db, [val]: [] });
     }
     
@@ -49,19 +42,6 @@ const FacultyPortal = () => {
   };
 
   const logout = () => { setCurrentUser(null); setView('login'); window.location.reload(); };
-
-  // --- Helpers ---
-  // Defined BEFORE usage to fix the "used before defined" error
-  const createStudent = (name) => ({
-    id: Date.now() + Math.random(),
-    name,
-    year: (Math.floor(Math.random() * (2026 - 2005 + 1)) + 2005).toString(),
-    isa: { isa1: [0,0,0,0,0], isa2: [0,0,0,0,0], isa3: [0,0,0,0,0] },
-    semMarks: [0,0,0,0],
-    practicalMarks: 0,
-    questionDetails: {},
-    result: 'pending'
-  });
 
   // --- Dashboard Logic ---
   const handleCreateSubject = () => {
@@ -74,22 +54,25 @@ const FacultyPortal = () => {
       selectedISAs: newSubject.selectedISAs,
       hasPractical: newSubject.hasPractical,
       practicalMax: newSubject.hasPractical ? Number(newSubject.practicalMax) : 25,
-      // Ensure credits are numbers
-      theoryCredits: Number(newSubject.theoryCredits),
-      practicalCredits: newSubject.hasPractical ? Number(newSubject.practicalCredits) : 0,
       students: [createStudent("Student A"), createStudent("Student B")]
     };
 
     const userSubjects = db[currentUser] || [];
     setDb({ ...db, [currentUser]: [...userSubjects, newSubData] });
     setSubjectModalOpen(false);
-    
     // Reset form
-    setNewSubject({ 
-      name: '', semMax: 100, hasPractical: false, practicalMax: 25, selectedISAs: ['isa1', 'isa2'], 
-      theoryCredits: 4, practicalCredits: 1 
-    });
+    setNewSubject({ name: '', semMax: 100, hasPractical: false, practicalMax: 25, selectedISAs: ['isa1', 'isa2'] });
   };
+
+  const createStudent = (name) => ({
+    id: Date.now() + Math.random(),
+    name,
+    isa: { isa1: [0,0,0,0,0], isa2: [0,0,0,0,0], isa3: [0,0,0,0,0] },
+    semMarks: [0,0,0,0],
+    practicalMarks: 0,
+    questionDetails: {},
+    result: 'pending'
+  });
 
   const handleIsaCheckbox = (e) => {
     const val = e.target.value;
@@ -110,6 +93,7 @@ const FacultyPortal = () => {
 
   const openGradingModal = (sIdx, type, subType = null) => {
     const sub = db[currentUser][currentSubIdx];
+    // Deep copy student data to temporary state
     const studentData = JSON.parse(JSON.stringify(sub.students[sIdx]));
     
     setGradingState({ studentIdx: sIdx, type, subType });
@@ -118,6 +102,7 @@ const FacultyPortal = () => {
     setModalError('');
   };
 
+  // Sub-part Logic for Modal
   const getUniqueKey = (idx) => {
     if (gradingState.type === 'ISA') return `${gradingState.subType}-${idx}`;
     return `sem-${idx}`;
@@ -151,9 +136,12 @@ const FacultyPortal = () => {
   const updateSubPart = (uniqueKey, subIdx, val, parentIdx) => {
     const newData = { ...modalStudentData };
     newData.questionDetails[uniqueKey].subs[subIdx] = Number(val);
+    
+    // Auto-sum to parent question
     const newTotal = newData.questionDetails[uniqueKey].subs.reduce((a,b) => a + Number(b), 0);
     if (gradingState.type === 'ISA') newData.isa[gradingState.subType][parentIdx] = newTotal;
     else if (gradingState.type === 'SEM') newData.semMarks[parentIdx] = newTotal;
+    
     setModalStudentData(newData);
   };
 
@@ -177,6 +165,7 @@ const FacultyPortal = () => {
   };
 
   const saveModalData = () => {
+    // Validate
     const sub = db[currentUser][currentSubIdx];
     if (gradingState.type === 'PRACTICAL') {
       const max = sub.practicalMax || 25;
@@ -184,6 +173,8 @@ const FacultyPortal = () => {
         setModalError(`Marks must be between 0 and ${max}`); return;
       }
     }
+
+    // Save to DB
     const newDb = { ...db };
     newDb[currentUser][currentSubIdx].students[gradingState.studentIdx] = modalStudentData;
     setDb(newDb);
@@ -194,12 +185,15 @@ const FacultyPortal = () => {
   const getStudentScore = (student) => {
     const sub = db[currentUser][currentSubIdx];
     const sum = arr => arr.reduce((a,b) => a+Number(b), 0);
+    
     let isaTotal = 0;
     if (sub.selectedISAs.includes('isa1')) isaTotal += sum(student.isa.isa1);
     if (sub.selectedISAs.includes('isa2')) isaTotal += sum(student.isa.isa2);
     if (sub.selectedISAs.includes('isa3')) isaTotal += sum(student.isa.isa3);
+
     const sem = sum(student.semMarks);
     const pract = sub.hasPractical ? (student.practicalMarks || 0) : 0;
+    
     return isaTotal + sem + pract;
   };
 
@@ -267,34 +261,21 @@ const FacultyPortal = () => {
             <span style={{ fontSize: '3rem', color: 'var(--border)' }}>+</span>
             <span style={{ fontWeight: 600, marginTop: '8px' }}>New Subject</span>
           </div>
-          {(db[currentUser] || []).map((sub, idx) => {
-            // FIX: Calculate defaults if data is undefined (Marks / 25)
-            // This prevents "undefined Credits"
-            const tCr = sub.theoryCredits !== undefined ? sub.theoryCredits : (sub.semMax ? sub.semMax / 25 : 4);
-            const pCr = sub.practicalCredits !== undefined ? sub.practicalCredits : (sub.practicalMax ? sub.practicalMax / 25 : 1);
-            
-            return (
-              <div className="card faculty-card" key={idx} onClick={() => openSubject(idx)} style={{ cursor: 'pointer' }}>
-                <div>
-                  <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, #4f46e5, #8b5cf6)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '1.2rem', marginBottom: '16px' }}>
-                    {sub.name.substring(0,2).toUpperCase()}
-                  </div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>{sub.name}</h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{sub.students.length} Students</p>
+          {(db[currentUser] || []).map((sub, idx) => (
+            <div className="card faculty-card" key={idx} onClick={() => openSubject(idx)} style={{ cursor: 'pointer' }}>
+              <div>
+                <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, #4f46e5, #8b5cf6)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '1.2rem', marginBottom: '16px' }}>
+                  {sub.name.substring(0,2).toUpperCase()}
                 </div>
-                <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                     {sub.hasPractical && <span style={{ fontSize: '0.75rem', background: '#dbeafe', color: '#1e40af', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>Prac ({sub.practicalMax})</span>}
-                     
-                     {/* FIX: Display "Credits" instead of "Cr" */}
-                     <span style={{ fontSize: '0.75rem', background: '#f3f4f6', color: '#4b5563', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
-                       {sub.hasPractical ? `${tCr}+${pCr} Credits` : `${tCr} Credits`}
-                     </span>
-                  </div>
-                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>{sub.name}</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{sub.students.length} Students</p>
               </div>
-            );
-          })}
+              <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Used: {sub.selectedISAs.join(', ').toUpperCase()}</span>
+                {sub.hasPractical && <span style={{ fontSize: '0.75rem', background: '#dbeafe', color: '#1e40af', padding: '2px 6px', borderRadius: '4px' }}>Prac ({sub.practicalMax})</span>}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -305,38 +286,10 @@ const FacultyPortal = () => {
             <div>
               <h2 style={{ fontSize: '1.75rem', fontWeight: 800 }}>{currentSubject.name}</h2>
               <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                ISAs Used: {currentSubject.selectedISAs.join(', ').toUpperCase()} 
-                {currentSubject.hasPractical ? ` | Practical (${currentSubject.practicalMax})` : ''} 
-                {/* FIX: Ensure values aren't undefined here either */}
-                {` | Credits: T:${currentSubject.theoryCredits || (currentSubject.semMax/25)} ${currentSubject.hasPractical ? `+ P:${currentSubject.practicalCredits || (currentSubject.practicalMax/25)}` : ''}`}
+                ISAs Used: {currentSubject.selectedISAs.join(', ').toUpperCase()} {currentSubject.hasPractical ? ` | Practical (${currentSubject.practicalMax})` : ''}
               </div>
             </div>
             <button className="btn btn-primary">Save Grades</button>
-          </div>
-
-          {/* Search and Filter Row */}
-          <div className="filter-container">
-            <div className="search-bar">
-              <span className="search-icon">🔍</span>
-              <input 
-                type="text" 
-                placeholder="Search by name..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <select 
-              className="year-filter" 
-              value={filterYear}
-              onChange={(e) => setFilterYear(e.target.value)}
-            >
-              <option value="All Years">FILTER YEAR</option>
-              {Array.from({ length: 2026 - 2005 + 1 }, (_, i) => 2005 + i).reverse().map((year) => (
-                <option key={year} value={year.toString()}>
-                  {year}
-                </option>
-              ))}
-            </select>
           </div>
 
           <div className="table-wrapper">
@@ -355,42 +308,34 @@ const FacultyPortal = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentSubject.students
-                  .map((st, originalIdx) => ({ ...st, originalIdx })) 
-                  .filter(st => {
-                    const matchesSearch = st.name.toLowerCase().includes(searchTerm.toLowerCase());
-                    const matchesYear = filterYear === "All Years" || st.year === filterYear;
-                    return matchesSearch && matchesYear;
-                  })
-                  .map((st) => {
-                    const sum = arr => arr.reduce((a, b) => a + Number(b), 0);
-                    const idx = st.originalIdx; 
-                    return (
-                      <tr key={st.id}>
-                        <td><input type="text" className="name-input" value={st.name} onChange={(e) => updateStudentField(idx, 'name', e.target.value)} /></td>
-                        <td style={{ textAlign: 'center' }}><div className="clickable-score" onClick={() => openGradingModal(idx, 'ISA', 'isa1')}>{sum(st.isa.isa1)}</div></td>
-                        <td style={{ textAlign: 'center' }}><div className="clickable-score" onClick={() => openGradingModal(idx, 'ISA', 'isa2')}>{sum(st.isa.isa2)}</div></td>
-                        <td style={{ textAlign: 'center' }}><div className="clickable-score" onClick={() => openGradingModal(idx, 'ISA', 'isa3')}>{sum(st.isa.isa3)}</div></td>
-                        <td style={{ textAlign: 'center' }}><div className="clickable-score" onClick={() => openGradingModal(idx, 'SEM')}>{sum(st.semMarks)}</div></td>
-                        {currentSubject.hasPractical && (
-                          <td style={{ textAlign: 'center' }}><div className="clickable-score" onClick={() => openGradingModal(idx, 'PRACTICAL')}>{st.practicalMarks || 0}</div></td>
-                        )}
-                        <td style={{ textAlign: 'center' }}><strong style={{ color: 'var(--text-main)', fontSize: '1rem' }}>{getStudentScore(st)}</strong></td>
-                        <td style={{ textAlign: 'center' }}>
-                          <select 
-                            className={`status-select status-${st.result}`} 
-                            value={st.result}
-                            onChange={(e) => updateStudentField(idx, 'result', e.target.value)}
-                          >
-                            <option value="pending">--</option>
-                            <option value="pass">Pass</option>
-                            <option value="fail">Fail</option>
-                          </select>
-                        </td>
-                        <td style={{ textAlign: 'center' }}><button className="btn btn-ghost" style={{ padding: '6px', border: 'none' }} onClick={() => deleteStudent(idx)}>✕</button></td>
-                      </tr>
-                    );
-                  })}
+                {currentSubject.students.map((st, idx) => {
+                   const sum = arr => arr.reduce((a, b) => a + Number(b), 0);
+                   return (
+                    <tr key={st.id}>
+                      <td><input type="text" className="name-input" value={st.name} onChange={(e) => updateStudentField(idx, 'name', e.target.value)} /></td>
+                      <td style={{ textAlign: 'center' }}><div className="clickable-score" onClick={() => openGradingModal(idx, 'ISA', 'isa1')}>{sum(st.isa.isa1)}</div></td>
+                      <td style={{ textAlign: 'center' }}><div className="clickable-score" onClick={() => openGradingModal(idx, 'ISA', 'isa2')}>{sum(st.isa.isa2)}</div></td>
+                      <td style={{ textAlign: 'center' }}><div className="clickable-score" onClick={() => openGradingModal(idx, 'ISA', 'isa3')}>{sum(st.isa.isa3)}</div></td>
+                      <td style={{ textAlign: 'center' }}><div className="clickable-score" onClick={() => openGradingModal(idx, 'SEM')}>{sum(st.semMarks)}</div></td>
+                      {currentSubject.hasPractical && (
+                        <td style={{ textAlign: 'center' }}><div className="clickable-score" onClick={() => openGradingModal(idx, 'PRACTICAL')}>{st.practicalMarks || 0}</div></td>
+                      )}
+                      <td style={{ textAlign: 'center' }}><strong style={{ color: 'var(--text-main)', fontSize: '1rem' }}>{getStudentScore(st)}</strong></td>
+                      <td style={{ textAlign: 'center' }}>
+                        <select 
+                          className={`status-select status-${st.result}`} 
+                          value={st.result}
+                          onChange={(e) => updateStudentField(idx, 'result', e.target.value)}
+                        >
+                          <option value="pending">--</option>
+                          <option value="pass">Pass</option>
+                          <option value="fail">Fail</option>
+                        </select>
+                      </td>
+                      <td style={{ textAlign: 'center' }}><button className="btn btn-ghost" style={{ padding: '6px', border: 'none' }} onClick={() => deleteStudent(idx)}>✕</button></td>
+                    </tr>
+                   );
+                })}
               </tbody>
             </table>
           </div>
@@ -411,79 +356,16 @@ const FacultyPortal = () => {
                 value={newSubject.name} onChange={(e) => setNewSubject({ ...newSubject, name: e.target.value })} 
               />
             </div>
-            
-            <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', background: '#f9fafb', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', marginBottom: '16px' }}>
-              <div>
-                <label style={{ marginBottom: '2px' }}>Has Practical?</label>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Enable practical marks & credits</span>
-              </div>
-              <input type="checkbox" style={{ width: '20px', height: '20px', accentColor: 'var(--primary)' }} 
-                checked={newSubject.hasPractical} onChange={(e) => setNewSubject({ ...newSubject, hasPractical: e.target.checked })}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <div className="form-group" style={{ flex: 1 }}>
-                 <label>Theory Credits</label>
-                 <input 
-                   type="number" className="form-input" min="1" max="10" 
-                   value={newSubject.theoryCredits} 
-                   onChange={(e) => setNewSubject({ ...newSubject, theoryCredits: e.target.value })} 
-                 />
-              </div>
-              {newSubject.hasPractical && (
-                <div className="form-group" style={{ flex: 1 }}>
-                   <label>Practical Credits</label>
-                   <input 
-                     type="number" className="form-input" min="1" max="10" 
-                     value={newSubject.practicalCredits} 
-                     onChange={(e) => setNewSubject({ ...newSubject, practicalCredits: e.target.value })} 
-                   />
-                </div>
-              )}
-            </div>
-
             <div className="form-group">
               <label>Max SEM Marks</label>
-              <select 
-                className="form-input" 
-                value={newSubject.semMax} 
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  // FIX: Auto-calculate credits when marks change (1 Cr = 25 Marks)
-                  setNewSubject({ ...newSubject, semMax: val, theoryCredits: val / 25 })
-                }}
-              >
-                {/* FIX: Full "Credits" name */}
-                <option value="20">20 Marks (0.8 Credits)</option>
-                <option value="40">40 Marks (1.6 Credits)</option>
-                <option value="60">60 Marks (2.4 Credits)</option>
-                <option value="80">80 Marks (3.2 Credits)</option>
-                <option value="100">100 Marks (4 Credits)</option>
+              <select className="form-input" value={newSubject.semMax} onChange={(e) => setNewSubject({ ...newSubject, semMax: e.target.value })}>
+                <option value="20">20 Marks</option>
+                <option value="40">40 Marks</option>
+                <option value="60">60 Marks</option>
+                <option value="80">80 Marks</option>
+                <option value="100">100 Marks</option>
               </select>
             </div>
-
-            {newSubject.hasPractical && (
-              <div className="form-group">
-                <label>Max Practical Marks</label>
-                <select 
-                  className="form-input" 
-                  value={newSubject.practicalMax} 
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    // FIX: Auto-calculate credits when practical marks change
-                    setNewSubject({ ...newSubject, practicalMax: val, practicalCredits: val / 25 })
-                  }}
-                >
-                  {/* FIX: Full "Credits" name */}
-                  <option value="25">25 Marks (1 Credits)</option>
-                  <option value="40">40 Marks (1.6 Credits)</option>
-                  <option value="50">50 Marks (2 Credits)</option>
-                  <option value="80">80 Marks (3.2 Credits)</option>
-                </select>
-              </div>
-            )}
-
             <div className="form-group">
               <label>Select ISAs for Calculation</label>
               <div className="isa-checkbox-group">
@@ -496,7 +378,25 @@ const FacultyPortal = () => {
               </div>
               {isaError && <div className="error-msg">⚠ Please select at least one ISA</div>}
             </div>
-
+            <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', background: '#f9fafb', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+              <div>
+                <label style={{ marginBottom: '2px' }}>Has Practical?</label>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Enable marks</span>
+              </div>
+              <input type="checkbox" style={{ width: '20px', height: '20px', accentColor: 'var(--primary)' }} 
+                checked={newSubject.hasPractical} onChange={(e) => setNewSubject({ ...newSubject, hasPractical: e.target.checked })}
+              />
+            </div>
+            {newSubject.hasPractical && (
+              <div className="form-group">
+                <label>Max Practical Marks</label>
+                <select className="form-input" value={newSubject.practicalMax} onChange={(e) => setNewSubject({ ...newSubject, practicalMax: e.target.value })}>
+                  <option value="25">25 Marks</option>
+                  <option value="40">40 Marks</option>
+                  <option value="80">80 Marks</option>
+                </select>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
               <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setSubjectModalOpen(false)}>Cancel</button>
               <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleCreateSubject}>Create Subject</button>
@@ -519,6 +419,7 @@ const FacultyPortal = () => {
               {gradingState.type === 'PRACTICAL' ? 'Enter total practical marks.' : 'Enter marks below. Rename labels or add sub-parts.'}
             </p>
 
+            {/* Practical Input */}
             {gradingState.type === 'PRACTICAL' ? (
               <div className="form-group">
                 <label>Marks Scored</label>
@@ -528,6 +429,7 @@ const FacultyPortal = () => {
                 />
               </div>
             ) : (
+              /* ISA/SEM List */
               <div>
                 {(gradingState.type === 'ISA' ? modalStudentData.isa[gradingState.subType] : modalStudentData.semMarks).map((val, idx) => {
                   const uniqueKey = getUniqueKey(idx);
@@ -555,6 +457,7 @@ const FacultyPortal = () => {
                           )}
                         </div>
                       </div>
+                      {/* Sub Parts Render */}
                       {subParts.length > 0 && (
                         <div className="sub-parts-container">
                           {subParts.map((subVal, sIdx) => (

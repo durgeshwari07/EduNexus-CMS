@@ -1,0 +1,35 @@
+[33mf7fb097[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: reset: moving to origin/main
+[33mf7fb097[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{1}: reset: moving to origin/main
+[33m73e6950[m HEAD@{2}: rebase (abort): returning to refs/heads/main
+[33mf7fb097[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{3}: pull origin main --rebase (start): checkout f7fb09776e6aae04176faaf9939a62c287629be5
+[33m73e6950[m HEAD@{4}: reset: moving to HEAD
+[33m73e6950[m HEAD@{5}: commit (merge): Accepted friend's App.js update
+[33m5155cff[m HEAD@{6}: commit: Save my App.js before pulling
+[33m5603117[m HEAD@{7}: commit (merge): Resolved merge conflict
+[33me677c86[m HEAD@{8}: commit: My local CMS updates before pulling latest code
+[33m4d928dc[m HEAD@{9}: commit: Remove node_modules and add gitignore
+[33m0ee1bc3[m HEAD@{10}: commit: Updated flow and app logic
+[33m51d0d5b[m HEAD@{11}: rebase (finish): returning to refs/heads/main
+[33m51d0d5b[m HEAD@{12}: rebase (continue): Completed student teacher portal and conected to backend
+[33m12737d0[m HEAD@{13}: pull --rebase origin main (start): checkout 12737d078cb513ba73af0ecb3380061f7c0ebeb4
+[33m05422fa[m HEAD@{14}: commit: Completed student teacher portal and conected to backend
+[33m4dbce68[m HEAD@{15}: reset: moving to origin/main
+[33m4dbce68[m HEAD@{16}: checkout: moving from main to main
+[33m4dbce68[m HEAD@{17}: pull: Fast-forward
+[33mdf0a27e[m HEAD@{18}: pull: Fast-forward
+[33m61c74e9[m HEAD@{19}: commit: Added new feature and updated frontend backend
+[33mfabbbbd[m HEAD@{20}: reset: moving to HEAD
+[33mfabbbbd[m HEAD@{21}: commit: Updated frontend and backend files
+[33md42b542[m HEAD@{22}: commit: update backend
+[33m29e691d[m HEAD@{23}: commit: feat: integrate backend source code into main repository
+[33mc28120b[m HEAD@{24}: commit: chore: sync frontend and backend into unified repo
+[33m2937913[m HEAD@{25}: pull origin main --allow-unrelated-histories: Fast-forward
+[33m71c5878[m HEAD@{26}: commit: Replaced old code with new project
+[33m7d63fef[m HEAD@{27}: Branch: renamed refs/heads/main to refs/heads/main
+[33m7d63fef[m HEAD@{29}: commit: Login with Email OTP using React and Node
+[33m0f699d2[m HEAD@{30}: Branch: renamed refs/heads/main to refs/heads/main
+[33m0f699d2[m HEAD@{32}: commit: Initial commit
+[33meb5368c[m HEAD@{33}: Branch: renamed refs/heads/main to refs/heads/main
+[33meb5368c[m HEAD@{35}: commit: Initial commit: Student Management System with Admin and Teacher portals
+[33mf828d22[m HEAD@{36}: Branch: renamed refs/heads/master to refs/heads/main
+[33mf828d22[m HEAD@{38}: commit (initial): Initialize project using Create React App

@@ -527,8 +527,7 @@ import Home from './pages/Home';
 
 /* --- 2. IMPORT TEAM UI COMPONENTS --- */
 /* Based on your project structure screenshot */
-import Navbar from './pages/Navbar';
-import Hero from './pages/Hero'; // Kept for reference, but Home replaces this on main route
+// Kept for reference, but Home replaces this on main route
 import DashboardLayout from './layouts/DashboardLayout';
 import StarField from './components/StarField';
 
