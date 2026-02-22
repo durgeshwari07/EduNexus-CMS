@@ -521,45 +521,35 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-/* --- 1. IMPORT YOUR NEW HOME PAGE --- */
 import Home from './pages/Home'; 
-
-
-/* --- 2. IMPORT TEAM UI COMPONENTS --- */
-/* Based on your project structure screenshot */
-// Kept for reference, but Home replaces this on main route
 import DashboardLayout from './layouts/DashboardLayout';
 import StarField from './components/StarField';
 
-/* --- 3. IMPORT PAGES --- */
 import Login from './pages/Login';
 import AdminRegistration from './pages/AdminRegistration';
 import TeacherRegistration from './pages/TeacherRegistration';
 import Overview from './pages/Overview';
-import Departments from './pages/Departments';
 import Teachers from './pages/Teachers';
 import Students from './pages/Students';
 import SubjectsManagement from './pages/SubjectsManagement';
-import DocumentVerification from './pages/DocumentVerification'; 
 import Reports from './pages/Reports'; 
 
-/* --- 4. IMPORT PORTALS (From assets folder) --- */
 import StudentPortal from './assets/StudentPortal';
 import FacultyPortal from './assets/FacultyPortal';
 
-// --- API INSTANCE ---
+import GatewayView from './ResultManagement/GatewayView';
+import MasterView from './ResultManagement/MasterView';
+
 const API = axios.create({ baseURL: 'http://localhost:5000/api' });
 
 export default function App() {
   const navigate = useNavigate();
   
-  // Auth State
   const [role, setRole] = useState(() => JSON.parse(localStorage.getItem('user_role')) || null);
   const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem('current_user')) || null);
   const [page, setPage] = useState('overview');
   const [selectedStudent, setSelectedStudent] = useState(null); 
 
-  // Data State
   const [departments, setDepartments] = useState([]);
   const [approvedTeachers, setApprovedTeachers] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -568,7 +558,6 @@ export default function App() {
   const [subjects, setSubjects] = useState([]);
   const [teacherAssignments, setTeacherAssignments] = useState([]);
 
-  // --- SYNC DATA FUNCTION ---
   const syncData = useCallback(async () => {
     try {
       if (!role) return; 
@@ -589,7 +578,6 @@ export default function App() {
 
   useEffect(() => { syncData(); }, [syncData]);
 
-  // --- LOGIN HANDLER ---
   const handleAuth = (userRole, userData) => {
     setRole(userRole);
     setCurrentUser(userData);
@@ -604,7 +592,6 @@ export default function App() {
     }
   };
 
-  // --- LOGOUT HANDLER ---
   const handleLogout = () => {
     setRole(null);
     setCurrentUser(null);
@@ -614,21 +601,13 @@ export default function App() {
 
   return (
     <div className="App min-h-screen bg-[#0a0a0a] text-[#ccc]">
-      {/* Background Star Effect */}
       <StarField />
       
       <Routes>
-        {/* --- MAIN HOME ROUTE --- */}
-        {/* This loads your Home.js design when opening the site */}
         <Route path="/" element={<Home />} />
-        
-        {/* --- LOGIN ROUTE --- */}
         <Route path="/login" element={role ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleAuth} />} />
-        
-        {/* --- PUBLIC PORTAL --- */}
         <Route path="/student-portal/:id" element={<StudentPortal />} />
 
-        {/* --- REGISTRATION ROUTES --- */}
         <Route path="/register/admin" element={
           <AdminRegistration onRegister={async (formData) => {
             try {
@@ -658,7 +637,6 @@ export default function App() {
           />
         } />
 
-        {/* --- DASHBOARD (PROTECTED) --- */}
         <Route path="/dashboard/*" element={
           role ? (
             <DashboardLayout 
@@ -668,7 +646,6 @@ export default function App() {
               setCurrentPage={setPage} 
               onLogout={handleLogout}
             >
-              
               {page === 'overview' && (
                 <Overview 
                   departments={departments} 
@@ -677,19 +654,7 @@ export default function App() {
                   pendingTeachers={pendingRequests} 
                 />
               )}
-              
-              {page === 'departments' && (
-                <Departments 
-                  userRole={role} 
-                  departments={departments} 
-                  onAddDept={async (d) => { await API.post('/departments', d); syncData(); }} 
-                  onEditDept={async (id, d) => { await API.put(`/departments/${id}`, d); syncData(); }} 
-                  onDeleteDept={async (id) => { await API.delete(`/departments/${id}`); syncData(); }} 
-                />
-              )}
-              
               {page === 'teachers' && <Teachers userRole={role} teachers={approvedTeachers} onRefresh={syncData} />}
-              
               {page === 'students' && (
                 <Students 
                   userRole={role} 
@@ -701,14 +666,12 @@ export default function App() {
                   onAddBatch={async (b) => { await API.post('/batches', b); syncData(); }} 
                 />
               )}
-
               {page === 'student-portal-view' && selectedStudent && (
                 <div className="portal-container">
                   <button onClick={() => setPage('students')} className="mb-4 text-blue-400">← Back to Students</button>
                   <StudentPortal id={selectedStudent.id} isPreview={true} />
                 </div>
               )}
-              
               {page === 'subjects' && (
                 <SubjectsManagement 
                   data={{ 
@@ -728,7 +691,6 @@ export default function App() {
                         const deletedId = subjects.find(s => !updatedFullData.subjects.find(us => us.id === s.id))?.id;
                         if (deletedId) await API.delete(`/subjects/${deletedId}`);
                       }
-                      
                       if (updatedFullData.teacherAssignments?.length > teacherAssignments.length) {
                         const newAssign = updatedFullData.teacherAssignments[updatedFullData.teacherAssignments.length - 1];
                         await API.post('/assign-teacher', newAssign);
@@ -738,7 +700,6 @@ export default function App() {
                   }} 
                 />
               )}
-
               {page === 'faculty-portal' && (
                 <FacultyPortal 
                   currentUser={currentUser} 
@@ -749,21 +710,48 @@ export default function App() {
                   }}
                 />
               )}
-              
-              {page === 'documents' && <DocumentVerification onRefresh={syncData} />}
-              
               {page === 'reports' && (
-                <Reports 
-                  data={{ departments, teachers: approvedTeachers, students: allStudents, subjects }} 
-                />
+                <Reports data={{ departments, teachers: approvedTeachers, students: allStudents, subjects }} />
               )}
-            
             </DashboardLayout>
           ) : <Navigate to="/login" />
         } />
         
-        {/* Fallback Route */}
+        {/* --- LIGHT THEME WRAPPERS FOR RESULT MANAGEMENT --- */}
+        <Route path="/results" element={
+          role ? (
+            <div className="bg-[#f4f7fb] text-slate-800 h-screen w-screen overflow-hidden text-left font-sans">
+              <GatewayView userRole={role} currentUser={currentUser} setCurrentPage={setPage} onLogout={handleLogout} />
+            </div>
+          ) : <Navigate to="/login" />
+        } />
+        
+        <Route path="/results/master/:batchId" element={
+          role ? (
+            <div className="bg-[#f4f7fb] text-slate-800 h-screen w-screen overflow-hidden text-left font-sans">
+              <MasterView userRole={role} currentUser={currentUser} setCurrentPage={setPage} onLogout={handleLogout} />
+            </div>
+          ) : <Navigate to="/login" />
+        } />
+
         <Route path="*" element={<Navigate to="/" replace />} />
+
+        {/* --- RESULT MANAGEMENT ROUTES --- */}
+        <Route path="/results" element={
+          role ? (
+            <div className="absolute inset-0 z-50 bg-[#f4f7fb] text-slate-800 min-h-screen w-full font-sans overflow-auto text-left">
+              <GatewayView userRole={role} currentUser={currentUser} setCurrentPage={setPage} onLogout={handleLogout} />
+            </div>
+          ) : <Navigate to="/login" />
+        } />
+        
+        <Route path="/results/master/:batchId" element={
+          role ? (
+            <div className="absolute inset-0 z-50 bg-[#f4f7fb] text-slate-800 min-h-screen w-full font-sans overflow-hidden text-left">
+              <MasterView userRole={role} currentUser={currentUser} setCurrentPage={setPage} onLogout={handleLogout} />
+            </div>
+          ) : <Navigate to="/login" />
+        } />
       </Routes>
     </div> 
   );

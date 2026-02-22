@@ -1,0 +1,64 @@
+{
+  "collegeName": "GVMS College",
+  "course": "Bachelor of Computer Applications (B.C.A.)",
+  "batch": "BCA-2023",
+  "stats": { "totalStudents": 124, "avgCgpa": 7.82, "passPercentage": "94.2%" },
+  "students": [
+    {
+      "prNo": "202302098",
+      "rollNo": "CS-23-001",
+      "name": "Mahima Yeshwant Joshi",
+      "semesters": [
+        {
+          "sem": 1,
+          "major": [
+            { "sub": "C PROG", "isa": 18, "esa": 64, "tot": 82, "grd": "A+", "attempts": 1 },
+            { "sub": "MATHS", "isa": 20, "esa": 68, "tot": 88, "grd": "O", "attempts": 1 }
+          ],
+          "minor": { "sub": "WEB DEV", "isa": 15, "esa": 61, "tot": 76, "grd": "A", "attempts": 1 },
+          "entitlement": { "type": "NCC", "marks": 10 },
+          "sgpa": 8.95, "grade": "A+", "attempts": 1
+        },
+        {
+          "sem": 2,
+          "major": [
+            { "sub": "DATA STR", "isa": 19, "esa": 66, "tot": 85, "grd": "O", "attempts": 1 },
+            { "sub": "DBMS", "isa": 20, "esa": 72, "tot": 92, "grd": "O", "attempts": 1 }
+          ],
+          "minor": { "sub": "OP SYS", "isa": 18, "esa": 62, "tot": 80, "grd": "A+", "attempts": 1 },
+          "entitlement": null,
+          "sgpa": 9.25, "grade": "O", "attempts": 1
+        }
+      ],
+      "summary": { "backlogs": 0, "cgpa": 9.05, "status": "PASS" }
+    },
+    {
+      "prNo": "202302099",
+      "rollNo": "CS-23-002",
+      "name": "Alice Smith",
+      "semesters": [
+        {
+          "sem": 1,
+          "major": [
+            { "sub": "C PROG", "isa": 12, "esa": 48, "tot": 60, "grd": "B+", "attempts": 2 },
+            { "sub": "MATHS", "isa": 14, "esa": 51, "tot": 65, "grd": "B+", "attempts": 1 }
+          ],
+          "minor": { "sub": "WEB DEV", "isa": 10, "esa": 45, "tot": 55, "grd": "B", "attempts": 1 },
+          "entitlement": null,
+          "sgpa": 6.80, "grade": "B+", "attempts": 2
+        },
+        {
+          "sem": 2,
+          "major": [
+            { "sub": "DATA STR", "isa": 15, "esa": 43, "tot": 58, "grd": "B", "attempts": 1 },
+            { "sub": "DBMS", "isa": 8, "esa": 27, "tot": 35, "grd": "F", "attempts": 3 }
+          ],
+          "minor": { "sub": "OP SYS", "isa": 12, "esa": 48, "tot": 60, "grd": "B+", "attempts": 1 },
+          "entitlement": null,
+          "sgpa": 5.90, "grade": "C", "attempts": 1
+        }
+      ],
+      "summary": { "backlogs": 1, "cgpa": 6.35, "status": "FAIL" }
+    }
+  ]
+}
