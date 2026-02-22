@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { 
   Terminal, Settings, Beaker, Briefcase, 

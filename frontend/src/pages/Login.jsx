@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 export default function LoginOtpApp({ onLoginSuccess }) {
   const [step, setStep] = useState("login");
-  const [role, setRole] = useState("admin"); 
+  const [role, setRole] = useState("admin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [loading, setLoading] = useState(false);
 
-  // --- 1. HANDLE INITIAL LOGIN (Credential Check & OTP Request) ---
+  // --- 1. HANDLE INITIAL LOGIN ---
   const handleLogin = async () => {
     if (!email || !password) {
       alert("Email and password required");
@@ -18,10 +18,9 @@ export default function LoginOtpApp({ onLoginSuccess }) {
 
     setLoading(true);
     try {
-      // Normalizing email to lowercase to match backend normalization
       const response = await axios.post("http://localhost:5000/api/auth/request-otp", {
-        email: email.toLowerCase(),
-        password,
+        email: email.toLowerCase().trim(),
+        password: password.trim(),
         role
       });
 
@@ -30,27 +29,41 @@ export default function LoginOtpApp({ onLoginSuccess }) {
         setStep("otp");
       }
     } catch (err) {
-      // Handles both "Invalid Credentials" and "Teacher Pending Approval" status
       alert(err.response?.data?.message || "Invalid credentials for selected role");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOtpChange = (value, index) => {
+  // --- 2. OTP INPUT LOGIC ---
+  const handleOtpChange = (e, index) => {
+    const value = e.target.value;
     if (!/^[0-9]?$/.test(value)) return;
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Auto-focus logic for the 4-digit input group
+    // Auto-focus Next
     if (value && index < 3) {
       const nextInput = document.querySelectorAll('.otp-input')[index + 1];
       if (nextInput) nextInput.focus();
     }
   };
 
-  // --- 2. VERIFY OTP & COMPLETE LOGIN ---
+  const handleKeyDown = (e, index) => {
+    // Auto-focus Previous on Backspace
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      const prevInput = document.querySelectorAll('.otp-input')[index - 1];
+      if (prevInput) prevInput.focus();
+    }
+    // Submit on Enter
+    if (e.key === "Enter" && otp.join("").length === 4) {
+      verifyOtp();
+    }
+  };
+
+  // --- 3. VERIFY OTP & COMPLETE LOGIN ---
   const verifyOtp = async () => {
     const otpString = otp.join("");
     if (otpString.length < 4) {
@@ -58,26 +71,27 @@ export default function LoginOtpApp({ onLoginSuccess }) {
       return;
     }
 
+    setLoading(true);
     try {
       const response = await axios.post("http://localhost:5000/api/auth/verify-otp", {
-        email: email.toLowerCase(), // Must match the lowercase email used in step 1
+        email: email.toLowerCase().trim(),
         otp: otpString
       });
 
       if (response.data.success) {
         alert("Verification successful!");
-        // Passes role and user data (including username) to App.js for redirection
         onLoginSuccess(response.data.role, response.data.user);
       }
     } catch (err) {
       alert("Invalid OTP code. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="page-container">
       <style>{css}</style>
-
       <main className="main-content">
         <div className="auth-card">
           <div className="visual-panel">
@@ -115,6 +129,7 @@ export default function LoginOtpApp({ onLoginSuccess }) {
                   className="form-input"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                 />
 
                 <input
@@ -123,6 +138,7 @@ export default function LoginOtpApp({ onLoginSuccess }) {
                   className="form-input"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                 />
 
                 <button className="btn-continue" onClick={handleLogin} disabled={loading}>
@@ -142,13 +158,14 @@ export default function LoginOtpApp({ onLoginSuccess }) {
                       maxLength={1}
                       className="otp-input"
                       value={d}
-                      onChange={e => handleOtpChange(e.target.value, i)}
+                      onChange={e => handleOtpChange(e, i)}
+                      onKeyDown={e => handleKeyDown(e, i)}
                     />
                   ))}
                 </div>
 
-                <button className="btn-continue" onClick={verifyOtp}>
-                  Verify & Access Dashboard
+                <button className="btn-continue" onClick={verifyOtp} disabled={loading}>
+                  {loading ? "Verifying..." : "Verify & Access Dashboard"}
                 </button>
 
                 <button className="btn-link" onClick={() => setStep("login")}>
@@ -171,133 +188,26 @@ const css = `
   --input-bg: #f0f4ff;
   --text-gray: #8892b0;
 }
-
 * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
 body { margin: 0; padding: 0; background: var(--bg-white); }
-
-.page-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: var(--bg-white);
-}
-
-.main-content {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.auth-card {
-  width: 950px;
-  height: 520px;
-  display: flex;
-  background: #fff;
-  border-radius: 25px;
-  overflow: hidden;
-  box-shadow: 0 15px 50px rgba(0,0,0,0.05);
-  border: 1px solid #f0f0f0;
-}
-
-.visual-panel {
-  width: 40%;
-  background: var(--primary-blue);
-  color: #fff;
-  padding: 50px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
+.page-container { display: flex; flex-direction: column; height: 100vh; background: var(--bg-white); }
+.main-content { flex: 1; display: flex; justify-content: center; align-items: center; }
+.auth-card { width: 950px; height: 520px; display: flex; background: #fff; border-radius: 25px; overflow: hidden; box-shadow: 0 15px 50px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; }
+.visual-panel { width: 40%; background: var(--primary-blue); color: #fff; padding: 50px; display: flex; flex-direction: column; justify-content: center; }
 .visual-panel h1 { font-size: 2.2rem; margin-bottom: 15px; }
 .visual-panel p { opacity: 0.8; line-height: 1.6; }
-
 .form-panel { width: 60%; overflow: hidden; }
-
-.slider {
-  display: flex;
-  width: 200%;
-  height: 100%;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide {
-  width: 50%;
-  padding: 70px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.role-selector {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 25px;
-}
-
-.role-selector button {
-    flex: 1;
-    padding: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    background: #fff;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.role-selector button.active {
-    background: var(--primary-blue);
-    color: white;
-    border-color: var(--primary-blue);
-}
-
+.slider { display: flex; width: 200%; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.slide { width: 50%; padding: 70px; display: flex; flex-direction: column; justify-content: center; }
+.role-selector { display: flex; gap: 10px; margin-bottom: 25px; }
+.role-selector button { flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
+.role-selector button.active { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
 .form-title { font-size: 1.1rem; color: #b0b8c1; margin: 0; }
 .form-subtitle { color: var(--primary-blue); margin: 5px 0 20px 0; font-weight: 500; }
-
-.form-input {
-  width: 100%;
-  padding: 16px;
-  margin-bottom: 15px;
-  border: none;
-  border-radius: 12px;
-  background: var(--input-bg);
-  font-size: 1rem;
-  color: #333;
-}
-
-.btn-continue {
-  background: var(--secondary-blue);
-  color: #fff;
-  padding: 16px;
-  border: none;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
+.form-input { width: 100%; padding: 16px; margin-bottom: 15px; border: none; border-radius: 12px; background: var(--input-bg); font-size: 1rem; color: #333; }
+.btn-continue { background: var(--secondary-blue); color: #fff; padding: 16px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 10px; }
 .btn-continue:disabled { opacity: 0.6; cursor: not-allowed; }
-
 .otp-group { display: flex; gap: 15px; margin-bottom: 25px; }
-.otp-input {
-  width: 60px;
-  height: 60px;
-  text-align: center;
-  font-size: 1.4rem;
-  font-weight: bold;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: var(--input-bg);
-}
-
-.btn-link {
-  background: none;
-  border: none;
-  color: #a0aec0;
-  margin-top: 20px;
-  cursor: pointer;
-}
+.otp-input { width: 60px; height: 60px; text-align: center; font-size: 1.4rem; font-weight: bold; border: 1px solid #e2e8f0; border-radius: 12px; background: var(--input-bg); }
+.btn-link { background: none; border: none; color: #a0aec0; margin-top: 20px; cursor: pointer; }
 `;

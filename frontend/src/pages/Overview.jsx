@@ -1,43 +1,84 @@
 import React from 'react';
 import { 
-  Plus, Building2, Users, GraduationCap, BookOpen, 
-  ChevronLeft, ChevronRight, Activity, Bell 
+  Plus, Building2, Users, GraduationCap, BookOpen, ShieldCheck, 
+  ChevronLeft, ChevronRight, Activity, Bell, Mail, Clock
 } from 'lucide-react';
 import StatCard from '../components/StatCard';
 
-export default function Overview({ userRole, departments = [], teachers = [], pendingTeachers = [], onApprove }) {
+/**
+ * Overview Component
+ * @param {string} userRole - 'admin' or 'teacher'
+ * @param {Array} departments - List of all departments
+ * @param {Array} teachers - List of approved teachers
+ * @param {Array} pendingTeachers - List of teachers awaiting approval
+ * @param {Array} allStudents - List of all students
+ * @param {Array} subjects - List of all curriculum subjects
+ * @param {Function} onApprove - Function to approve a pending teacher
+ */
+export default function Overview({ 
+  userRole, 
+  departments = [], 
+  teachers = [], 
+  pendingTeachers = [], 
+  allStudents = [], 
+  subjects = [], 
+  onApprove 
+}) {
   const isAdmin = userRole === 'admin';
 
   return (
-    // font-sans applies Inter globally if configured in tailwind.config
-    <div className="animate-in fade-in duration-500 max-w-full font-sans">
+    <div className="animate-in fade-in duration-500 max-w-full font-sans p-2">
       
       {/* 1. HEADER SECTION */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
         <div>
           <h2 className="text-3xl font-black text-slate-900 tracking-tight">
             Dashboard Overview
           </h2>
           <p className="text-slate-500 text-sm font-medium tracking-tight">
-            Welcome back, Admin. Here is what's happening today.
+            Welcome back, <span className="text-blue-600 font-bold">{isAdmin ? 'Administrator' : 'Faculty Member'}</span>. Here is the institutional snapshot.
           </p>
         </div>
         <div className="flex gap-3">
            <button className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
             <Bell size={14} /> Notifications
           </button>
-          <button className="flex items-center gap-2 bg-[#136dec] text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-[#136dec]/20 hover:bg-blue-700 transition-all active:scale-95">
+          <button className="flex items-center gap-2 bg-[#136dec] text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95">
             <Plus size={16} /> Generate Report
           </button>
         </div>
       </div>
 
-      {/* 2. KPI STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard icon={<Building2/>} label="Total Departments" value={departments.length || "8"} trend="+2 New" color="text-emerald-500" />
-        <StatCard icon={<Users/>} label="Teachers" value={teachers.length || "45"} trend="Active" color="text-slate-400" />
-        <StatCard icon={<GraduationCap/>} label="Students" value="1,200" trend="+12%" color="text-emerald-500" />
-        <StatCard icon={<BookOpen/>} label="Subjects" value="32" trend="Semester 1" color="text-slate-400" />
+      {/* 2. LIVE KPI STATS (Numbers fetched directly from array lengths) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <StatCard 
+          icon={<Building2/>} 
+          label="Total Departments" 
+          value={departments.length} 
+          trend={`${departments.length > 0 ? '+Active' : 'Offline'}`} 
+          color="text-blue-600" 
+        />
+        <StatCard 
+          icon={<Users/>} 
+          label="Approved Teachers" 
+          value={teachers.length} 
+          trend="Live Faculty" 
+          color="text-indigo-600" 
+        />
+        <StatCard 
+          icon={<GraduationCap/>} 
+          label="Total Students" 
+          value={allStudents.length} 
+          trend="+Live Records" 
+          color="text-emerald-500" 
+        />
+        <StatCard 
+          icon={<BookOpen/>} 
+          label="Total Subjects" 
+          value={subjects.length} 
+          trend="Current Curriculum" 
+          color="text-amber-500" 
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -45,15 +86,15 @@ export default function Overview({ userRole, departments = [], teachers = [], pe
         {/* LEFT COLUMN: PRIMARY DATA */}
         <div className="lg:col-span-2 space-y-8">
           
-          {/* Pending Teacher Requests */}
+          {/* Pending Teacher Requests Table */}
           <div className="bg-white rounded-[24px] border border-slate-200 overflow-hidden shadow-sm">
             <div className="p-6 border-b flex justify-between items-center bg-white">
               <h4 className="font-black text-slate-900 text-[11px] uppercase tracking-[0.2em]">
                 Pending Teacher Requests
               </h4>
-              <button className="text-[11px] font-black uppercase tracking-widest text-[#136dec] hover:underline">
-                View All
-              </button>
+              <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">
+                {pendingTeachers.length} New Application{pendingTeachers.length !== 1 ? 's' : ''}
+              </span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -70,18 +111,40 @@ export default function Overview({ userRole, departments = [], teachers = [], pe
                     pendingTeachers.map((t) => (
                       <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
                         <td className="px-6 py-4 flex items-center gap-3">
-                          <div className="size-9 bg-slate-100 rounded-full flex items-center justify-center text-[11px] font-black text-slate-600 border border-slate-200 shadow-sm">
-                            {t.initial || 'SJ'}
+                          <div className="size-9 bg-blue-50 rounded-full flex items-center justify-center text-[11px] font-black text-blue-600 border border-blue-100 shadow-sm uppercase">
+                            {t.initial || t.name?.charAt(0) || 'T'}
                           </div>
-                          <span className="font-bold text-slate-700 text-sm tracking-tight">{t.name}</span>
+                          <div className="flex flex-col">
+                            <span className="font-black text-slate-700 text-sm tracking-tight uppercase">
+                              {t.name}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                              <Clock size={10} /> Needs Review
+                            </span>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 text-slate-500 font-bold text-xs">{t.dept}</td>
-                        <td className="px-6 py-4 text-slate-400 text-[10px] font-bold uppercase tracking-tight">Oct 12, 2023</td>
+                        <td className="px-6 py-4">
+                          <span className="text-slate-500 font-black text-[10px] uppercase bg-slate-100 px-2.5 py-1 rounded-lg">
+                             {t.deptName || t.dept || 'General'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-400 text-[10px] font-bold uppercase tracking-tight">
+                          {t.dateApplied ? new Date(t.dateApplied).toLocaleDateString('en-US', { 
+                            month: 'short', day: 'numeric', year: 'numeric' 
+                          }) : 'Recent'}
+                        </td>
                         <td className="px-6 py-4 text-right">
                           {isAdmin && (
                             <div className="flex justify-end gap-2">
-                              <button onClick={() => onApprove(t.id)} className="bg-[#136dec] text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-md shadow-blue-100 transition">Approve</button>
-                              <button className="text-slate-400 font-black text-[9px] uppercase tracking-widest hover:text-red-500 transition">Reject</button>
+                              <button 
+                                onClick={() => onApprove(t.id)} 
+                                className="bg-[#136dec] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 transition active:scale-95"
+                              >
+                                Approve
+                              </button>
+                              <button className="text-slate-300 font-black text-[9px] uppercase tracking-widest hover:text-red-500 transition px-2">
+                                Reject
+                              </button>
                             </div>
                           )}
                         </td>
@@ -89,8 +152,11 @@ export default function Overview({ userRole, departments = [], teachers = [], pe
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" className="px-6 py-10 text-center text-slate-400 italic text-sm font-medium">
-                        No pending requests at the moment.
+                      <td colSpan="4" className="px-6 py-20 text-center">
+                         <div className="flex flex-col items-center opacity-20">
+                            <ShieldCheck size={40} className="mb-2" />
+                            <p className="italic text-xs font-black uppercase tracking-widest text-slate-600">No pending verification tasks</p>
+                         </div>
                       </td>
                     </tr>
                   )}
@@ -99,19 +165,17 @@ export default function Overview({ userRole, departments = [], teachers = [], pe
             </div>
           </div>
 
-          {/* PERFORMANCE TRENDS */}
+          {/* Institutional Performance Metrics */}
           <div className="bg-white p-8 rounded-[24px] border border-slate-200 shadow-sm">
             <div className="flex justify-between items-center mb-8">
               <h4 className="font-black text-[11px] text-slate-900 uppercase tracking-[0.2em]">
-                Top Performing Departments
+                Departmental Coverage & Health
               </h4>
               <Activity className="text-[#136dec]" size={18} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-              <ProgressBar label="Computer Science" val="94%" width="94%" />
-              <ProgressBar label="Mathematics" val="88%" width="88%" />
-              <ProgressBar label="Physics" val="82%" width="82%" />
-              <ProgressBar label="Biotechnology" val="79%" width="79%" />
+              <ProgressBar label="System Department Sync" val={`${Math.min(departments.length * 12.5, 100)}%`} width={`${Math.min(departments.length * 12.5, 100)}%`} />
+              <ProgressBar label="Faculty-Student Ratio" val={`${Math.min((teachers.length / (allStudents.length || 1)) * 1000, 100).toFixed(0)}%`} width={`${Math.min((teachers.length / (allStudents.length || 1)) * 1000, 100).toFixed(0)}%`} />
             </div>
           </div>
         </div>
@@ -120,34 +184,34 @@ export default function Overview({ userRole, departments = [], teachers = [], pe
         {/* RIGHT COLUMN: WIDGETS */}
         <div className="space-y-8">
           
-          {/* Calendar Widget */}
+          {/* Academic Calendar */}
           <div className="bg-white rounded-[24px] border border-slate-200 p-7 shadow-sm">
             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Academic Calendar</h4>
             <div className="flex justify-between mb-8 items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
               <ChevronLeft size={16} className="cursor-pointer text-slate-400 hover:text-[#136dec]" />
-              <span className="text-xs font-black text-slate-900 tracking-tight">October 2023</span>
+              <span className="text-xs font-black text-slate-900 tracking-tight">February 2026</span>
               <ChevronRight size={16} className="cursor-pointer text-slate-400 hover:text-[#136dec]" />
             </div>
             <div className="space-y-5">
-               <CalendarItem day="24" month="OCT" title="Midterm Exams" sub="All Departments" active />
-               <CalendarItem day="28" month="OCT" title="Staff Meeting" sub="Main Conference Hall" />
-               <CalendarItem day="02" month="NOV" title="Cultural Fest" sub="Campus Grounds" />
+               <CalendarItem day="24" month="FEB" title="Internal Assessment" sub="All Departments" active />
+               <CalendarItem day="28" month="FEB" title="Staff General Meeting" sub="Conference Room A" />
+               <CalendarItem day="02" month="MAR" title="Semester Project Sync" sub="Labs 1-4" />
             </div>
             <button className="w-full mt-8 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border border-slate-100 rounded-xl hover:bg-slate-50 hover:text-[#136dec] transition-all">Full Schedule</button>
           </div>
 
-          {/* STORAGE WIDGET */}
+          {/* System Health Widget */}
           <div className="bg-gradient-to-br from-[#136dec] to-blue-700 p-8 rounded-[24px] text-white shadow-2xl shadow-blue-200 relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 size-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-all duration-700"></div>
-              <h5 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70 mb-2">Cloud Storage Status</h5>
+              <h5 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70 mb-2">Cloud Gateway Status</h5>
               <div className="flex justify-between items-end mb-4">
-                 <span className="text-5xl font-black tracking-tighter">78%</span>
-                 <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest">390 GB / 500 GB</span>
+                 <span className="text-5xl font-black tracking-tighter">99.8%</span>
+                 <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Active Server</span>
               </div>
               <div className="w-full bg-white/20 h-2.5 rounded-full mb-8 overflow-hidden shadow-inner">
-                 <div className="bg-white h-full rounded-full transition-all duration-1000" style={{width: '78%'}}></div>
+                 <div className="bg-white h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_white]" style={{width: '99.8%'}}></div>
               </div>
-              <button className="w-full py-4 bg-white text-[#136dec] rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-50 transition-all shadow-lg">Upgrade Storage</button>
+              <button className="w-full py-4 bg-white text-[#136dec] rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-50 transition-all shadow-lg font-black">System Diagnostics</button>
           </div>
         </div>
       </div>
