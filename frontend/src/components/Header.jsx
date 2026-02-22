@@ -1,65 +1,44 @@
-// import React from 'react';
-// import { Search, Bell, Mail } from 'lucide-react';
-
-// export default function Header({ userRole }) {
-//   return (
-//     <header className="h-16 flex items-center justify-between px-8 bg-white border-b border-slate-200 shrink-0">
-//       <div className="max-w-md w-full relative">
-//         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-//         <input className="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-[#136dec]/30" placeholder="Search data..." />
-//       </div>
-//       <div className="flex items-center gap-4">
-//         <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full relative">
-//           <Bell size={20} />
-//           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
-//         </button>
-//         <div className="flex items-center gap-3 pl-4 border-l">
-//           <div className="text-right hidden sm:block">
-//             <p className="text-xs font-bold text-slate-900">{userRole === 'admin' ? 'Admin User' : 'Teacher'}</p>
-//             <p className="text-[10px] text-slate-500 uppercase tracking-widest">{userRole}</p>
-//           </div>
-//           <div className="h-9 w-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-[#136dec] font-bold">
-//             {userRole === 'admin' ? 'A' : 'T'}
-//           </div>
-//         </div>
-//       </div>
-//     </header>
-//   );
-// }
-
 import React from 'react';
-import { Search, Bell } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 
-export default function Header({ userRole }) {
+/**
+ * Header Component - Text-Only Identity
+ * Displays the logged-in user's name and role directly as text.
+ */
+export default function Header({ userRole, currentUser }) {
+  // Pulls the institution name from the synced database record
+  const institutionName = currentUser?.collegeName || "GVMS GGPR";
+
   return (
-    <header className="h-16 flex items-center justify-between px-8 bg-white border-b border-slate-200 shrink-0">
-      <div className="max-w-md w-full relative">
-        <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-          size={18}
-        />
-        <input
-          className="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-[#136dec]/30"
-          placeholder="Search data..."
-        />
+    <header className="h-16 flex items-center justify-between px-8 bg-white border-b border-slate-200 shrink-0 shadow-sm">
+      
+      {/* 1. LEFT SIDE: INSTITUTION IDENTITY */}
+      <div className="flex items-center gap-3 text-[#136dec]">
+        <div className="p-2 bg-blue-50 rounded-xl border border-blue-100 shadow-sm">
+          <Building2 size={20} />
+        </div>
+        <div className="flex flex-col">
+           <h1 className="text-[15px] font-black uppercase tracking-[0.15em] text-slate-800 leading-none mb-1">
+             {institutionName}
+           </h1>
+           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+             UNIDESK GATEWAY
+           </span>
+        </div>
       </div>
-      <div className="flex items-center gap-4">
-        <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full relative">
-          <Bell size={20} />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
-        </button>
-        <div className="flex items-center gap-3 pl-4 border-l">
-          <div className="text-right hidden sm:block">
-            <p className="text-xs font-bold text-slate-900">
-              {userRole === 'admin' ? 'Admin User' : 'Teacher'}
-            </p>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest">
-              {userRole}
-            </p>
-          </div>
-          <div className="h-9 w-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-[#136dec] font-bold">
-            {userRole === 'admin' ? 'A' : 'T'}
-          </div>
+
+      {/* 2. RIGHT SIDE: DIRECT TEXT LABELS (No Avatar Box) */}
+      <div className="flex items-center pl-6 border-l border-slate-100">
+        <div className="text-right">
+          {/* USER NAME: Pulled from MySQL 'name' column */}
+          <p className="text-sm font-black text-slate-900 uppercase tracking-tight leading-none mb-1.5">
+            {currentUser?.name || (userRole === 'admin' ? 'Admin User' : 'Faculty Teacher')}
+          </p>
+          
+          {/* ROLE DESCRIPTION: Clean text sub-label */}
+          <p className="text-[10px] font-bold text-[#136dec] uppercase tracking-[0.2em] opacity-90">
+            {userRole === 'admin' ? 'System Administrator' : 'Academic Faculty Member'}
+          </p>
         </div>
       </div>
     </header>
