@@ -178,9 +178,15 @@ export default function App() {
                 <Teachers userRole={role} teachers={approvedTeachers} departments={departments} onRefresh={syncData} />
               )}
               
+        
+
               {/* 4. STUDENT RECORDS */}
               {page === 'students' && (
-                <Students userRole={role} batches={batches} allStudents={allStudents} 
+                <Students 
+                  userRole={role} 
+                  batches={batches} 
+                  allStudents={allStudents} 
+                  displayDepts={departments} // 👈 ADD THIS LINE
                   onViewProfile={(s) => { setSelectedStudent(s); setPage('student-portal-view'); }}
                   onAddStudent={async (d) => { await API.post('/students', d); syncData(); }} 
                   onDeleteStudent={async (id) => { await API.delete(`/students/${id}`); syncData(); }} 

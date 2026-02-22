@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx';
 import { 
   Search, Download, Plus, Users, CheckCircle, 
   X, Camera, UserCircle, Hash, GraduationCap, Trash2, 
-  Upload, ChevronLeft, ChevronRight 
+  Upload, ChevronLeft, ChevronRight, TrendingUp 
 } from 'lucide-react';
 
 // --- HELPER: MAP EXCEL HEADERS TO DATABASE KEYS ---
@@ -12,6 +12,7 @@ const mapExcelDataToStudent = (row, batchId) => {
   return {
     name: row['Name'] || row['name'] || 'Unknown',
     enrollmentNo: row['Enrollment'] || row['enrollmentNo'] || null,
+    prNo: row['PR No'] || row['prNo'] || null,
     email: row['Email'] || row['email'] || null,
     phone: row['Phone'] || row['phone'] || "",
     semester: parseInt(row['Semester']) || 1,
@@ -21,6 +22,8 @@ const mapExcelDataToStudent = (row, batchId) => {
     address: row['Address'] || "",
     guardianName: row['Guardian'] || "",
     guardianPhone: row['Guardian Contact'] || "",
+    passCount: parseInt(row['Pass']) || 0,
+    failCount: parseInt(row['Fail']) || 0,
     username: row['Username'] || row['Enrollment'] || `user_${Math.floor(Math.random() * 1000)}`, 
     password: row['Password'] || 'Student@123',
     status: 'Active',
@@ -33,7 +36,6 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
   const [searchQuery, setSearchQuery] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   
-  // PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1);
   const studentsPerPage = 10;
 
@@ -43,24 +45,22 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
   // 1. DYNAMIC STATISTICS
   const stats = [
     { label: 'Total Students', value: students.length, icon: <Users size={18} />, color: 'bg-blue-50 text-blue-600' },
-    { label: 'Current Sem', value: batch.year || '1', icon: <GraduationCap size={18} />, color: 'bg-indigo-50 text-indigo-600' },
+    { label: 'Current Sem', value: batch.sem || '1', icon: <GraduationCap size={18} />, color: 'bg-indigo-50 text-indigo-600' },
     { label: 'Batch ID', value: batch.batch || '2024', icon: <Hash size={18} />, color: 'bg-slate-50 text-slate-600' },
     { label: 'Active', value: students.filter(s => s.status === 'Active').length, icon: <CheckCircle size={18} />, color: 'bg-green-50 text-green-600' },
   ];
 
-  // 2. LIVE FILTERING
   const filteredStudents = students.filter(s => 
     s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.enrollmentNo?.toString().toLowerCase().includes(searchQuery.toLowerCase())
+    s.enrollmentNo?.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.prNo?.toString().toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // 3. PAGINATION CALCULATIONS
   const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
   const indexOfLastStudent = currentPage * studentsPerPage;
   const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
   const currentStudents = filteredStudents.slice(indexOfFirstStudent, indexOfLastStudent);
 
-  // 4. BULK EXCEL UPLOAD LOGIC
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -81,7 +81,6 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
           console.error("Failed to import student:", row.Name, err);
         }
       }
-
       setIsImporting(false);
       e.target.value = null; 
       alert(`Import process finished. Processed ${data.length} rows.`);
@@ -91,18 +90,35 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
 
   const triggerFileUpload = () => fileInputRef.current.click();
 
-  // 5. MANUAL FORM SUBMISSION
+  // 5. MANUAL FORM SUBMISSION WITH VALIDATION
   const handleFormSubmit = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
+    
+    const phone = fd.get('phone');
+    const name = fd.get('name');
+
+    // Name Validation: Only text
+    if (!/^[a-zA-Z\s]+$/.test(name)) {
+      alert("Name must only contain letters and spaces.");
+      return;
+    }
+
+    // Phone Validation: Exactly 10 digits
+    if (!/^\d{10}$/.test(phone)) {
+      alert("Phone number must be exactly 10 digits.");
+      return;
+    }
+
     const studentData = {
-      name: fd.get('name'),
+      name: name,
       enrollmentNo: fd.get('enrollmentNo'),
+      prNo: fd.get('prNo'),
       email: fd.get('email'),
-      phone: fd.get('phone'),
-      semester: parseInt(fd.get('semester')) || 1, 
+      phone: phone,
+      semester: parseInt(batch.sem) || 1, // Taken from Batch
       division: fd.get('division'),
-      academicYear: fd.get('academicYear'),
+      academicYear: batch.year || '2024-25', // Taken from Batch
       dob: fd.get('dob'),
       address: fd.get('address'),
       guardianName: fd.get('guardianName'),
@@ -141,7 +157,7 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
-              placeholder="Search students by name or enrollment..." 
+              placeholder="Search students by name, enrollment or PR No..." 
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -182,8 +198,8 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
             <thead className="bg-slate-50/50 border-b text-xs font-bold text-slate-500 uppercase tracking-wider">
               <tr>
                 <th className="px-6 py-6">Student Profile</th>
-                <th className="px-6 py-6 text-center">Enrollment</th>
-                <th className="px-6 py-6 text-center">Academic Info</th>
+                <th className="px-6 py-6 text-center">Enrollment / PR</th>
+                <th className="px-6 py-6 text-center">Academic Health</th>
                 <th className="px-6 py-6 text-center">Contact</th>
                 <th className="px-6 py-6 text-center">Status</th>
                 <th className="px-6 py-6 text-right">Actions</th>
@@ -203,11 +219,19 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-5 text-center text-sm font-bold text-slate-600">{s.enrollmentNo}</td>
                   <td className="px-6 py-5 text-center">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">Sem {s.semester}</span>
-                      <span className="text-xs text-slate-500 font-bold uppercase tracking-tighter">Division {s.division}</span>
+                    <p className="text-sm font-bold text-slate-600">{s.enrollmentNo}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">PR: {s.prNo || 'N/A'}</p>
+                  </td>
+                  <td className="px-6 py-5 text-center">
+                    <div className="flex flex-col items-center gap-1.5">
+                       <div className="flex gap-1">
+                          <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black px-2 py-0.5 rounded border border-emerald-100">{s.passCount || 0} Pass</span>
+                          <span className={`${s.failCount > 0 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-50 text-slate-400 border-slate-100'} text-[10px] font-black px-2 py-0.5 rounded border`}>
+                            {s.failCount || 0} Fail
+                          </span>
+                       </div>
+                       <span className="text-[10px] text-slate-500 font-bold uppercase">Sem {s.semester} • Div {s.division}</span>
                     </div>
                   </td>
                   <td className="px-6 py-5 text-center text-sm font-medium text-slate-500">{s.phone}</td>
@@ -289,20 +313,57 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
             </div>
             <form onSubmit={handleFormSubmit} className="p-10 space-y-10 overflow-y-auto text-left">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                <InputGroup label="Full Name" name="name" placeholder="Enter Full Name" />
+                
+                {/* Name Validation: pattern allows only letters and spaces */}
+                <InputGroup 
+                    label="Full Name" 
+                    name="name" 
+                    placeholder="Enter Full Name" 
+                    pattern="[a-zA-Z\s]+" 
+                    title="Only letters and spaces allowed"
+                />
+
                 <InputGroup label="Enrollment No" name="enrollmentNo" placeholder="e.g. ENR2024001" />
+                <InputGroup label="PR No (Permanent Registration)" name="prNo" placeholder="e.g. PR202400512" />
                 <InputGroup label="Institutional Email" name="email" type="email" placeholder="student@college.edu" />
-                <InputGroup label="Contact Number" name="phone" placeholder="+91 00000 00000" />
-                <SelectGroup label="Semester" name="semester" options={['1', '2', '3', '4', '5', '6']} />
+                
+                {/* Phone Validation: Max 10 chars, digits only */}
+                <InputGroup 
+                    label="Contact Number" 
+                    name="phone" 
+                    placeholder="10-digit Number" 
+                    type="tel" 
+                    pattern="\d{10}" 
+                    maxLength="10"
+                    title="Please enter exactly 10 digits"
+                />
+
+                {/* Auto-filled and Locked Semester */}
+                <div className="space-y-3">
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">Semester</label>
+                    <div className="w-full border-2 border-slate-100 bg-slate-50 rounded-2xl p-5 text-sm font-black text-blue-600">
+                        Semester {batch.sem || 1} (Locked to Batch)
+                    </div>
+                </div>
+
                 <SelectGroup label="Division" name="division" options={['A', 'B', 'C', 'D']} />
-                <SelectGroup label="Academic Cycle" name="academicYear" options={['2023-24', '2024-25', '2025-26']} />
+                
+                {/* Auto-filled and Locked Academic Cycle */}
+                <div className="space-y-3">
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">Academic Cycle</label>
+                    <div className="w-full border-2 border-slate-100 bg-slate-50 rounded-2xl p-5 text-sm font-black text-slate-700">
+                        {batch.year || '2024-25'} (From Batch)
+                    </div>
+                </div>
+
                 <InputGroup label="Date of Birth" name="dob" type="date" />
+
                 <div className="md:col-span-2 space-y-3">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Permanent Address</label>
                   <textarea name="address" className="w-full border-2 border-slate-100 rounded-2xl p-5 text-sm font-medium outline-none focus:border-blue-200 transition-all min-h-[120px] text-slate-800" placeholder="Street, City, State, ZIP..."></textarea>
                 </div>
                 <InputGroup label="Guardian Name" name="guardianName" placeholder="Father/Mother Name" />
-                <InputGroup label="Guardian Contact" name="guardianPhone" placeholder="+91 00000 00000" />
+                <InputGroup label="Guardian Contact" name="guardianPhone" placeholder="10-digit Number" maxLength="10" />
                 <InputGroup label="System Username" name="username" placeholder="johndoe_24" />
                 <InputGroup label="System Password" name="password" type="password" placeholder="••••••••" />
               </div>
@@ -319,7 +380,7 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
 }
 
 // --- REUSABLE UI COMPONENTS ---
-const InputGroup = ({ label, name, type = "text", placeholder }) => (
+const InputGroup = ({ label, name, type = "text", placeholder, ...props }) => (
   <div className="space-y-3">
     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</label>
     <input 
@@ -328,6 +389,7 @@ const InputGroup = ({ label, name, type = "text", placeholder }) => (
       placeholder={placeholder} 
       className="w-full border-2 border-slate-100 rounded-2xl p-5 text-sm font-medium outline-none focus:border-blue-200 transition-all text-slate-800" 
       required 
+      {...props}
     />
   </div>
 );
