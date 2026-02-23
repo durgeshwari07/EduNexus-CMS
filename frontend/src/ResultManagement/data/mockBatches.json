@@ -1,0 +1,38 @@
+[
+  {
+    "id": "bca-2023",
+    "courseCode": "BCA",
+    "courseName": "Bachelor of Computer Applications",
+    "batchYear": "Batch 2023 - 2026",
+    "totalStudents": 124,
+    "latestExam": "Semester 2",
+    "isActive": true
+  },
+  {
+    "id": "bca-2024",
+    "courseCode": "BCA",
+    "courseName": "Bachelor of Computer Applications",
+    "batchYear": "Batch 2024 - 2027",
+    "totalStudents": 110,
+    "latestExam": "N/A",
+    "isActive": true
+  },
+  {
+    "id": "bba-2023",
+    "courseCode": "BBA",
+    "courseName": "Bachelor of Business Administration",
+    "batchYear": "Batch 2023 - 2026",
+    "totalStudents": 85,
+    "latestExam": "Semester 2",
+    "isActive": true
+  },
+  {
+    "id": "empty-demo",
+    "courseCode": "BCA",
+    "batchYear": "2025 - 2028",
+    "courseName": "Bachelor of Computer Applications",
+    "totalStudents": 0,
+    "currentSem": "New Batch"
+  }
+
+]
