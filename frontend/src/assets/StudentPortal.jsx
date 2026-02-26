@@ -1,344 +1,229 @@
-import React, { useState, useRef, useEffect } from 'react';
-import useLocalStorageSync from './useLocalStorageSync';
-import { useNavigate } from 'react-router-dom';
-import './Portal.css';
 
-const StudentPortal = () => {
+
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
+import './StudentPortal.css';
+
+const API_URL = 'http://localhost:5000/api';
+
+const StudentPortal = ({ id: propId, isPreview = false }) => {
   const navigate = useNavigate();
-  const targetStudentName = "Student A";
+  const { id: routeId } = useParams();
+  const studentId = propId || routeId;
 
-  // Data Keys
-  const MARKS_KEY = 'unidesk_v10_practical';
-  const PROFILE_KEY = 'unidesk_student_profile';
-  const DOC_KEY = 'unidesk_student_documents';
-  const SGPA_HISTORY_KEY = 'unidesk_student_sgpa_history';
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // State Management
-  const [marksDB] = useLocalStorageSync(MARKS_KEY, {});
-  const [profile, setProfile] = useLocalStorageSync(PROFILE_KEY, {
-    fullName: "Student A",
-    prNumber: "202302121",
-    rollNumber: "BCA-23-012",
-    aadhaar: "XXXX-XXXX-1234",
-    dept: "BCA – Bachelor of Computer Applications",
-    year: "2023",
-    semester: "Semester I"
-  });
-  const [documents, setDocuments] = useLocalStorageSync(DOC_KEY, {});
-  const [sgpaHistory, setSgpaHistory] = useLocalStorageSync(SGPA_HISTORY_KEY, {});
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`${API_URL}/student-profile/${studentId}`);
+        setData(res.data);
+      } catch (err) {
+        console.error("Error fetching student data:", err);
+        setError("Could not load student records. Ensure the backend is running.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (studentId) fetchStudentData();
+  }, [studentId]);
 
-  const [isSaving, setIsSaving] = useState(false);
-  const fileInputRef = useRef(null);
+  const getGradePoints = (grade) => {
+    const pointsMap = { 'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'P': 4, 'F': 0 };
+    return pointsMap[grade] || 0;
+  };
 
-  // --- Calculations ---
   const calculateGrade = (score) => {
     if (score >= 90) return 'O'; if (score >= 80) return 'A+'; if (score >= 70) return 'A';
     if (score >= 60) return 'B+'; if (score >= 50) return 'B'; if (score >= 40) return 'P';
     return 'F';
   };
 
-  const getGradePoint = (score) => {
-    if (score >= 90) return 10; if (score >= 80) return 9; if (score >= 70) return 8;
-    if (score >= 60) return 7; if (score >= 50) return 6; if (score >= 40) return 5;
-    return 0;
-  };
+  if (loading) return <div className="p-10 text-center">Loading Student Records...</div>;
+  if (error) return <div className="p-10 text-center text-red-500">{error}</div>;
+  if (!data) return <div className="p-10 text-center">No student found.</div>;
 
-  // Derive Table Data
-  let grandTotal = 0;
-  let subjectsCount = 0;
-  let totalGradePoints = 0;
-  let totalCredits = 0;
+  const { profile, marks = [], documents = [], sgpaHistory = [] } = data;
 
-  const tableRows = [];
+  const liveSGPA = marks.length > 0 
+    ? (marks.reduce((sum, m) => sum + getGradePoints(m.grade || calculateGrade(m.total)), 0) / marks.length).toFixed(2)
+    : "0.00";
 
-  Object.values(marksDB).forEach((subjects) => {
-    subjects.forEach((sub, idx) => {
-      const student = sub.students.find(s => s.name === targetStudentName);
-      if (student) {
-        const sum = arr => arr.reduce((a, b) => a + Number(b), 0);
-        const isa1 = sum(student.isa.isa1);
-        const isa2 = sum(student.isa.isa2);
-        const isa3 = sum(student.isa.isa3);
-        const semScore = sum(student.semMarks);
-        const practScore = student.practicalMarks || 0;
-
-        // Note: In real app logic from faculty.html, we filtered based on selectedISAs,
-        // but student view in index.html just summed them all. Keeping faithful to index.html logic:
-        const theoryScore = isa1 + isa2 + isa3 + semScore;
-        const totalScore = theoryScore + practScore;
-        const grade = calculateGrade(totalScore);
-        const gradePoint = getGradePoint(totalScore);
-        
-        tableRows.push({
-          code: `SUB-0${idx + 1}`,
-          name: sub.name,
-          theoryMax: sub.theoryMax || sub.semMax || '--',
-          theoryScore,
-          practMax: sub.practicalMax || '--',
-          practScore,
-          hasPractical: sub.hasPractical,
-          totalScore,
-          grade
-        });
-
-        grandTotal += totalScore;
-        subjectsCount++;
-        totalGradePoints += (gradePoint * 4);
-        totalCredits += 4;
-      }
-    });
-  });
-
-  // Derived GPAs
-  const currentSGPA = totalCredits > 0 ? (totalGradePoints / totalCredits) : 0;
-  
-  // Update History Side Effect
-  useEffect(() => {
-    if (totalCredits > 0) {
-      const currentSem = profile.semester || 'Semester I';
-      const history = { ...sgpaHistory };
-      if (!history[targetStudentName]) history[targetStudentName] = {};
-      
-      // Only update if changed to avoid infinite loop
-      if (history[targetStudentName][currentSem] !== currentSGPA) {
-        history[targetStudentName][currentSem] = currentSGPA;
-        setSgpaHistory(history);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSGPA, profile.semester, totalCredits]);
-
-  // Calculate CGPA
-  const studentHistory = sgpaHistory[targetStudentName] || {};
-  const semesters = Object.values(studentHistory);
-  const cgpa = semesters.length > 0 ? semesters.reduce((a, b) => a + b, 0) / semesters.length : 0;
-
-  // --- Actions ---
-  const handleProfileChange = (e) => {
-    setProfile({ ...profile, [e.target.id]: e.target.value });
-  };
-
-  const saveProfile = () => {
-    setIsSaving(true);
-    // Profile is already synced via hook, just showing UI feedback
-    setTimeout(() => setIsSaving(false), 1500);
-  };
-
-  const handleFileUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const pr = profile.prNumber?.trim();
-    if (!pr) return;
-
-    const newDocs = { ...documents };
-    if (!newDocs[pr]) newDocs[pr] = [];
-
-    files.forEach(file => {
-      const formatSize = (bytes) => {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024; const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-      };
-      
-      const ext = file.name.split('.').pop().toUpperCase();
-      newDocs[pr].push({
-        name: file.name,
-        type: ext === 'JPEG' ? 'JPG' : ext,
-        size: formatSize(file.size),
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        status: 'Pending'
-      });
-    });
-
-    setDocuments(newDocs);
-    fileInputRef.current.value = '';
-  };
-
-  const finalizeRecord = () => {
-    const pr = profile.prNumber?.trim();
-    if(!pr) return alert('Please enter a valid PR Number.');
-    const newDocs = { ...documents };
-    if (!newDocs[pr] || newDocs[pr].length === 0) return alert('Cannot finalize: No documents found.');
-    
-    newDocs[pr] = newDocs[pr].map(d => ({ ...d, status: 'Approved' }));
-    setDocuments(newDocs);
-    alert('Record finalized successfully');
-  };
-
-  const studentDocs = documents[profile.prNumber] || [];
+  const allSGPAs = [...sgpaHistory.map(h => Number(h.sgpa)), Number(liveSGPA)].filter(val => val > 0);
+  const liveCGPA = allSGPAs.length > 0 
+    ? (allSGPAs.reduce((a, b) => a + b, 0) / allSGPAs.length).toFixed(2)
+    : "0.00";
 
   return (
-    <>
-      <nav className="navbar">
-        <div className="logo">Uni<span>Desk</span></div>
-        <div className="nav-right">
-          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>Help</span>
-          <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Admin" className="admin-avatar" />
-        </div>
-      </nav>
+    <div className={`portal-root ${isPreview ? 'is-preview' : ''}`}>
+      {!isPreview && (
+        <nav className="navbar">
+          <div className="logo">Uni<span>Desk</span></div>
+          <div className="nav-right">
+            <span className="nav-link">Help</span>
+            <img src={`https://ui-avatars.com/api/?name=${profile.name}`} alt="User" className="admin-avatar" />
+          </div>
+        </nav>
+      )}
 
       <div className="container">
         <header className="page-header">
           <div className="page-title-group">
-            <div className="back-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></div>
+            {!isPreview && (
+              <div className="back-btn" onClick={() => navigate(-1)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              </div>
+            )}
             <div className="student-photo-container">
-              <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Student" className="student-photo" />
+              <img src={`https://ui-avatars.com/api/?name=${profile.name}&background=random`} alt="Student" className="student-photo" />
             </div>
             <div className="page-title">
-              <h1>{profile.fullName || 'Student'}</h1>
-              <p>Manage academic records and personal details.</p>
+              <h1>{profile.name}</h1>
+              <p>PRN: {profile.prNo} | {profile.dept || 'Department'}</p>
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button className="btn btn-ghost" onClick={() => window.open('/faculty', '_blank')}>Edit Marks</button>
-            <button className="btn btn-ghost" onClick={() => window.location.reload()}>Discard Changes</button>
-            <button 
-              className="btn btn-primary" 
-              onClick={saveProfile}
-              style={{ backgroundColor: isSaving ? '#10b981' : undefined }}
-            >
-              {isSaving ? 'Saved ✓' : 'Save Profile'}
-            </button>
           </div>
         </header>
 
+        {/* --- PERSONAL INFORMATION SECTION --- */}
         <section className="card">
           <div className="section-header">
-            <div className="section-title">
-              <div className="section-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
-              Personal Information
-            </div>
+            <div className="section-title">Personal Information</div>
           </div>
           <div className="form-grid">
             <div className="form-group full-width">
               <label>Full Name</label>
-              <input type="text" className="form-input" id="fullName" value={profile.fullName} onChange={handleProfileChange} />
+              <input type="text" className="form-input" value={profile.name || ''} readOnly />
             </div>
+            
             <div className="form-group">
-              <label>PR Number</label>
-              <input type="text" className="form-input" id="prNumber" value={profile.prNumber} onChange={handleProfileChange} />
+              <label>Enrollment Number</label>
+              <input type="text" className="form-input" value={profile.enrollmentNo || 'N/A'} readOnly />
             </div>
+
             <div className="form-group">
-              <label>Roll Number</label>
-              <input type="text" className="form-input" id="rollNumber" value={profile.rollNumber} onChange={handleProfileChange} />
+              <label>PR Number (Permanent Registration)</label>
+              <input type="text" className="form-input" value={profile.prNo || 'N/A'} readOnly />
             </div>
+
             <div className="form-group">
-              <label>Aadhaar Number</label>
-              <input type="text" className="form-input" id="aadhaar" value={profile.aadhaar} onChange={handleProfileChange} />
+              <label>Email ID</label>
+              <input type="text" className="form-input" value={profile.email || 'N/A'} readOnly />
             </div>
+
             <div className="form-group">
-              <label>Department / Course</label>
-              <select className="form-input" id="dept" value={profile.dept} onChange={handleProfileChange}>
-                <option>BCA – Bachelor of Computer Applications</option>
-                <option>B.Com – Bachelor of Commerce</option>
-                <option>M.Com – Master of Commerce</option>
-              </select>
+              <label>Phone Number</label>
+              <input type="text" className="form-input" value={profile.phone || 'N/A'} readOnly />
             </div>
+
             <div className="form-group">
-              <label>Admission Year</label>
-              <input type="text" className="form-input" id="year" value={profile.year} onChange={handleProfileChange} />
+              <label>Date of Birth</label>
+              <input type="text" className="form-input" value={profile.dob || '--/--/----'} readOnly />
             </div>
+
             <div className="form-group">
-              <label>Current Semester</label>
-              <select className="form-input" id="semester" value={profile.semester} onChange={handleProfileChange}>
-                {['Semester I','Semester II','Semester III','Semester IV','Semester V','Semester VI','Semester VII','Semester VIII'].map(s => (
-                  <option key={s}>{s}</option>
-                ))}
-              </select>
+              <label>Academic Year</label>
+              <input type="text" className="form-input" value={profile.academicYear || 'N/A'} readOnly />
+            </div>
+
+            <div className="form-group">
+              <label>Semester</label>
+              <input type="text" className="form-input" value={profile.semester || 'N/A'} readOnly />
+            </div>
+
+            <div className="form-group">
+              <label>Division / Section</label>
+              <input type="text" className="form-input" value={profile.division || 'N/A'} readOnly />
             </div>
           </div>
         </section>
 
+        {/* Academic Record */}
         <section className="card">
           <div className="section-header">
-            <div className="section-title">
-              <div className="section-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
-              Academic Record
-            </div>
+            <div className="section-title">Academic Record</div>
           </div>
           <div className="table-wrapper">
-            <table>
+            <table className="full-width-table">
               <thead>
-                <tr><th>Code</th><th>Subject Name</th><th>Theory (Max/Scored)</th><th>Pract (Max/Scored)</th><th>Total</th><th>Grade</th></tr>
+                <tr>
+                  <th>Code</th>
+                  <th>Subject Name</th>
+                  <th>ISA</th>
+                  <th>Theory</th>
+                  <th>Practical</th>
+                  <th>Total</th>
+                  <th>Grade</th>
+                </tr>
               </thead>
               <tbody>
-                {tableRows.length === 0 ? (
-                  <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No records found for this student.</td></tr>
+                {marks.length === 0 ? (
+                  <tr><td colSpan="7" className="empty-table-msg">No marks found.</td></tr>
                 ) : (
-                  tableRows.map((row, i) => (
+                  marks.map((m, i) => (
                     <tr key={i}>
-                      <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{row.code}</td>
-                      <td style={{ fontWeight: 500 }}>{row.name}</td>
-                      <td dangerouslySetInnerHTML={{ __html: `${row.theoryMax} / <b>${row.theoryScore}</b>` }}></td>
-                      <td>
-                        {row.hasPractical 
-                          ? <span dangerouslySetInnerHTML={{ __html: `${row.practMax} / <b>${row.practScore}</b>` }} /> 
-                          : <span style={{ color: '#ccc' }}>--</span>}
+                      <td className="code-cell">{m.subjectCode}</td>
+                      <td className="subject-cell">{m.subjectName}</td>
+                      <td className="score-cell"><b>{m.isaScore}</b></td>
+                      <td className="score-cell">{m.theoryScore}</td>
+                      <td className="score-cell">{m.practScore || '--'}</td>
+                      <td className="total-cell">{m.total}</td>
+                      <td className="grade-cell">
+                        <span className={`grade-badge ${m.grade === 'F' ? 'grade-red' : 'grade-green'}`}>
+                          {m.grade || calculateGrade(m.total)}
+                        </span>
                       </td>
-                      <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{row.totalScore}</td>
-                      <td><span className={`grade-badge ${row.grade === 'F' ? 'grade-red' : 'grade-green'}`}>{row.grade}</span></td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
+
           <div className="gpa-container">
             <div className="gpa-stat">
-              <span className="gpa-label">Total Score</span>
-              <span className="gpa-value">{grandTotal}</span>
+              <span className="gpa-label">Current SGPA</span>
+              <span className="gpa-value">{liveSGPA}</span>
             </div>
             <div className="gpa-stat">
-              <span className="gpa-label">SGPA</span>
-              <span className="gpa-value">{currentSGPA.toFixed(2)}</span>
-            </div>
-            <div className="gpa-stat">
-              <span className="gpa-label">CGPA</span>
-              <span className="gpa-value">{cgpa.toFixed(2)}</span>
+              <span className="gpa-label">Cumulative CGPA</span>
+              <span className="gpa-value">{liveCGPA}</span>
             </div>
           </div>
         </section>
 
+        {/* Documents */}
         <section className="card">
           <div className="section-header">
-            <div className="section-title">
-              <div className="section-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg></div>
-              Documents
-            </div>
-            <button className="btn btn-ghost" onClick={() => fileInputRef.current.click()} style={{ fontSize: '0.8rem', padding: '8px 16px' }}>Batch Upload</button>
+            <div className="section-title">Verified Documents</div>
           </div>
-          <div className="doc-grid">
-            <div className="upload-area" onClick={() => fileInputRef.current.click()}>
-              <input type="file" multiple accept=".pdf, .jpg, .jpeg, .png" style={{ display: 'none' }} ref={fileInputRef} onChange={handleFileUpload} />
-              <div className="upload-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              </div>
-              <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>Click to Upload</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>or drag and drop files here</div>
-            </div>
-            <div className="doc-list">
-              {studentDocs.map((doc, idx) => (
+          <div className="doc-list">
+            {documents.length === 0 ? (
+              <div className="empty-docs">No documents found.</div>
+            ) : (
+              documents.map((doc, idx) => (
                 <div className="file-card" key={idx}>
                   <div className="file-info">
-                    <div className={`file-type ${['JPG','JPEG','PNG'].includes(doc.type) ? 'type-img' : 'type-pdf'}`}>{doc.type}</div>
+                    <div className="file-type type-pdf">{doc.type || 'PDF'}</div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{doc.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{doc.size} • {doc.date}</div>
+                      <div className="file-name">{doc.name}</div>
+                      <div className="file-meta">{doc.uploadDate}</div>
                     </div>
                   </div>
-                  <span className={`status-pill ${doc.status === 'Approved' ? 'status-ok' : 'status-wait'}`}>{doc.status}</span>
+                  <span className={`status-pill ${doc.status === 'Approved' ? 'status-ok' : 'status-wait'}`}>
+                    {doc.status}
+                  </span>
                 </div>
-              ))}
-            </div>
+              ))
+            )}
           </div>
         </section>
-
-        <div className="footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
-          <button className="btn btn-ghost">Cancel</button>
-          <button className="btn btn-primary" onClick={finalizeRecord}>Finalize Record</button>
-        </div>
       </div>
-    </>
+    </div>
   );
 };
 

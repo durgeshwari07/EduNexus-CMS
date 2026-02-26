@@ -166,7 +166,7 @@ export default function Overview({
           </div>
 
           {/* Institutional Performance Metrics */}
-          <div className="bg-white p-8 rounded-[24px] border border-slate-200 shadow-sm">
+          {/* <div className="bg-white p-8 rounded-[24px] border border-slate-200 shadow-sm">
             <div className="flex justify-between items-center mb-8">
               <h4 className="font-black text-[11px] text-slate-900 uppercase tracking-[0.2em]">
                 Departmental Coverage & Health
@@ -177,7 +177,7 @@ export default function Overview({
               <ProgressBar label="System Department Sync" val={`${Math.min(departments.length * 12.5, 100)}%`} width={`${Math.min(departments.length * 12.5, 100)}%`} />
               <ProgressBar label="Faculty-Student Ratio" val={`${Math.min((teachers.length / (allStudents.length || 1)) * 1000, 100).toFixed(0)}%`} width={`${Math.min((teachers.length / (allStudents.length || 1)) * 1000, 100).toFixed(0)}%`} />
             </div>
-          </div>
+          </div> */}
         </div>
 
 
@@ -201,7 +201,7 @@ export default function Overview({
           </div>
 
           {/* System Health Widget */}
-          <div className="bg-gradient-to-br from-[#136dec] to-blue-700 p-8 rounded-[24px] text-white shadow-2xl shadow-blue-200 relative overflow-hidden group">
+          {/* <div className="bg-gradient-to-br from-[#136dec] to-blue-700 p-8 rounded-[24px] text-white shadow-2xl shadow-blue-200 relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 size-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-all duration-700"></div>
               <h5 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70 mb-2">Cloud Gateway Status</h5>
               <div className="flex justify-between items-end mb-4">
@@ -212,7 +212,7 @@ export default function Overview({
                  <div className="bg-white h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_white]" style={{width: '99.8%'}}></div>
               </div>
               <button className="w-full py-4 bg-white text-[#136dec] rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-50 transition-all shadow-lg font-black">System Diagnostics</button>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

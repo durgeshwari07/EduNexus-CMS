@@ -1,11 +1,23 @@
 /* --- DESIGN TOKENS --- */
 :root {
-  --primary: #0056b3;       /* UniDesk Blue */
-  --secondary: #eef4fb;     /* Soft Background Blue */
+  --primary: #0056b3;
+  --primary-dark: #004494;
+  --secondary: #eef4fb;
   --white: #ffffff;
-  --black: #1a1a1a;         /* High Contrast Black */
-  --gray: #444444;          /* Soft Black for text */
+  --black: #1a1a1a;
+  --gray: #444444;
   --border: #dde5ed;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* FIX 1: Ensure the browser allows scrolling on the root level */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto; /* Forces vertical scroll visibility */
+  scroll-behavior: smooth;
 }
 
 * {
@@ -13,12 +25,13 @@
   font-family: 'Segoe UI', 'Roboto', sans-serif;
 }
 
-/* Scoping styles to a container to avoid breaking other parts of your app */
+/* Scoping styles to a container */
 .home-container {
   background-color: var(--white);
   color: var(--black);
-  overflow-x: hidden;
   width: 100%;
+  display: block; 
+  position: relative;
 }
 
 /* --- NAV --- */
@@ -30,6 +43,7 @@
   position: fixed;
   width: 100%;
   top: 0;
+  left: 0; 
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   z-index: 1000;
@@ -41,6 +55,12 @@
   font-weight: 800;
   color: var(--primary);
   letter-spacing: -0.5px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.brand:hover {
+  opacity: 0.8;
 }
 
 .login-btn {
@@ -51,12 +71,13 @@
   border-radius: 6px;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: transform 0.2s ease;
+  transition: var(--transition);
 }
 
 .login-btn:hover {
   transform: translateY(-2px);
-  background-color: #004494;
+  background-color: var(--primary-dark);
+  box-shadow: 0 4px 12px rgba(0, 86, 179, 0.25);
 }
 
 /* --- HERO --- */
@@ -67,8 +88,9 @@
   justify-content: center;
   align-items: center;
   text-align: center;
-  padding: 120px 20px 0; /* Added top padding to clear fixed nav */
+  padding: 120px 20px 60px;
   background: radial-gradient(circle at top, var(--secondary) 0%, var(--white) 70%);
+  position: relative; 
 }
 
 .hero h1 {
@@ -103,12 +125,19 @@
   font-size: 1.1rem;
   display: inline-block;
   cursor: pointer;
+  transition: var(--transition);
 }
 
 .btn-blue {
   background-color: var(--primary);
   color: var(--white);
   box-shadow: 0 4px 15px rgba(0, 86, 179, 0.2);
+}
+
+.btn-blue:hover {
+  transform: translateY(-3px);
+  background-color: var(--primary-dark);
+  box-shadow: 0 6px 20px rgba(0, 86, 179, 0.3);
 }
 
 .btn-white {
@@ -118,7 +147,9 @@
 }
 
 .btn-white:hover {
-  border-color: var(--black);
+  transform: translateY(-3px);
+  background-color: var(--secondary);
+  border-color: var(--primary);
 }
 
 /* --- CORE CONCEPT --- */
@@ -131,10 +162,11 @@
   align-items: center;      
   text-align: center;       
   background-color: var(--white);
+  position: relative; 
 }
 
 .content-box {
-  max-width: 800px;        
+  max-width: 800px;         
 }
 
 .section-label {
@@ -190,23 +222,14 @@
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.03);
   border: 1px solid rgba(0,0,0,0.05);
-  transition: transform 0.3s;
+  transition: var(--transition);
+  cursor: default;
 }
 
 .feature-item:hover {
-  transform: translateY(-5px);
+  transform: translateY(-10px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
   border-color: var(--primary);
-}
-
-.feature-item h3 {
-  font-size: 1.5rem;
-  color: var(--primary);
-  margin-bottom: 15px;
-}
-
-.feature-item p {
-  color: var(--gray);
-  line-height: 1.6;
 }
 
 /* --- ROLES --- */
@@ -217,11 +240,6 @@
   align-items: center;
   justify-content: space-between;
   background-color: var(--white);
-}
-
-.section-roles h2 {
-    font-size: 2.5rem;
-    margin-bottom: 20px;
 }
 
 .role-text {
@@ -242,19 +260,14 @@
   border: 2px solid var(--secondary);
   padding: 25px;
   border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  transition: var(--transition);
+  cursor: pointer;
 }
 
-.role-badge h4 {
-  font-size: 1.3rem;
-  margin-bottom: 5px;
-  color: var(--black);
-}
-
-.role-badge p {
-  font-size: 0.95rem;
-  color: var(--gray);
-  margin: 0;
+.role-badge:hover {
+  transform: translateX(10px);
+  border-color: var(--primary);
+  background-color: var(--secondary);
 }
 
 .role-icon {
@@ -270,6 +283,13 @@
   align-items: center;
   border-radius: 50%;
   flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.role-badge:hover .role-icon {
+  background: var(--primary);
+  color: var(--white);
+  transform: scale(1.1);
 }
 
 /* --- FOOTER --- */
@@ -280,14 +300,13 @@ footer {
   border-top: 1px solid var(--border);
 }
 
-footer strong {
-  color: var(--primary);
-}
-
-/* Mobile Responsiveness (Bonus) */
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
   .hero h1 { font-size: 2.5rem; }
   .feature-grid { grid-template-columns: 1fr; }
-  .section-roles { flex-direction: column; }
-  .role-text, .role-cards-wrapper { width: 100%; }
+  .section-roles { flex-direction: column; padding: 60px 5%; }
+  .role-text, .role-cards-wrapper { width: 100%; text-align: center; }
+  .role-badge { flex-direction: column; text-align: center; }
+  .role-badge:hover { transform: translateY(-5px); } /* Vertical lift for mobile */
+  .role-icon { margin: 0 0 15px 0; }
 }

@@ -1,5 +1,3 @@
-
-
 /* 1. Import the font from Google */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
@@ -31,3 +29,6 @@
 /* Sticky logic for the Roll No and Name columns */
 .sticky-col-1 { position: sticky; left: 0; z-index: 20; background: white; }
 .sticky-col-2 { position: sticky; left: 100px; z-index: 20; background: white; border-right: 2px solid #e2e8f0; }
+
+
+
