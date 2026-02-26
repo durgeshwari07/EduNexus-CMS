@@ -32,7 +32,7 @@ import MasterView from './ResultManagement/MasterView';
 const API_URL = 'http://localhost:5000/api';
 export const API = axios.create({ baseURL: API_URL });
 
-// --- 🛡️ AUTH INTERCEPTOR ---
+// ---  AUTH INTERCEPTOR ---
 API.interceptors.request.use((config) => {
   const user = JSON.parse(localStorage.getItem('current_user'));
   if (user && user.token) {
@@ -85,7 +85,7 @@ export default function App() {
 
   useEffect(() => { syncData(); }, [syncData, page]);
 
-  // --- 🔐 AUTH HANDLERS ---
+  // ---  AUTH HANDLERS ---
   const handleAuth = (userRole, userData) => {
     setRole(userRole);
     setCurrentUser(userData);
@@ -145,7 +145,7 @@ export default function App() {
           />
         } />
 
-        {/* 🛡️ PROTECTED DASHBOARD ROUTES */}
+        {/*  PROTECTED DASHBOARD ROUTES */}
         <Route path="/dashboard/*" element={
           role && role !== 'student' ? (
             <DashboardLayout 
@@ -217,7 +217,7 @@ export default function App() {
           ) : <Navigate to="/login" replace />
         } />
         
-        {/* 📊 RESULT MANAGEMENT MODULE */}
+        {/*  RESULT MANAGEMENT MODULE */}
         <Route path="/results" element={ 
           role ? <GatewayView batches={batches} allStudents={allStudents} displayDepts={departments} userRole={role} currentUser={currentUser} onLogout={handleLogout} /> 
           : <Navigate to="/login" /> 
@@ -228,10 +228,10 @@ export default function App() {
           : <Navigate to="/login" /> 
         } />
 
-        {/* 🎓 STUDENT PORTAL */}
+        {/*  STUDENT PORTAL */}
         <Route path="/student-portal/:id" element={<StudentPortal isPreview={false} />} />
 
-        {/* ❓ CATCH-ALL */}
+        {/*  CATCH-ALL */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div> 
