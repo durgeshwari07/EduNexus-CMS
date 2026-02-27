@@ -32,9 +32,9 @@ export default function Overview({
       {/* 1. HEADER SECTION */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-[2rem] font-black text-[#0f172a] leading-tight tracking-tight">
             Dashboard Overview
-          </h2>
+          </h1>
           <p className="text-slate-500 text-sm font-medium tracking-tight">
             Welcome back, <span className="text-blue-600 font-bold">{isAdmin ? 'Administrator' : 'Faculty Member'}</span>. Here is the institutional snapshot.
           </p>

@@ -5,12 +5,26 @@ import "./Home.css";
 function Home() {
   return (
     <div className="home-container">
-      {/* NAV */}
-      <nav>
-        <div className="brand">UniDesk</div>
-        {/* Linked to the team's Login page */}
-        <Link to="/login" className="login-btn">Login Portal</Link>
-      </nav>
+    {/* NAV */}
+
+          <nav className="flex items-center justify-between w-full">
+      {/* --- LOGO CONTAINER --- */}
+      <div className="h-14 w-auto shrink-0 flex items-center bg-white overflow-hidden">
+        <img 
+          src="https://pub-1407f82391df4ab1951418d04be76914.r2.dev/uploads/8c7338dc-8987-48b2-b26f-82ea8e223018.jpeg" 
+          alt="UniDesk Logo" 
+          className="h-full w-auto object-contain object-left" 
+        />
+      </div>
+
+      {/* --- ACTION BUTTON --- */}
+      <Link 
+        to="/login" 
+        className="login-btn px-6 py-2 bg-[#136dec] text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition-colors"
+      >
+        Login Portal
+      </Link>
+    </nav>
 
       {/* HERO */}
       <section className="hero">

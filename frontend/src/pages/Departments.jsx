@@ -28,16 +28,19 @@ export default function Departments({ userRole, departments = [], onAddDept, onD
   };
 
   return (
-    <div className="animate-in fade-in duration-500 max-w-7xl mx-auto p-6 space-y-8 font-sans">
+    <div className="animate-in fade-in duration-500 max-w-7xl mx-auto p-2 space-y-8 font-sans">
       
       {/* 1. BREADCRUMB & HEADER */}
       <div className="space-y-1">
-        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+        {/* <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
           <LayoutGrid size={12} /> Dashboard / <span className="text-[#136dec]">Departments</span>
-        </div>
+        </div> */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Institutional Departments</h1>
+            {/* <h1 className="text-4xl font-black text-slate-900 tracking-tight">Institutional Departments</h1> */}
+            <h1 className="text-[2rem] font-black text-[#0f172a] leading-tight tracking-tight">
+            Institutional Departments
+          </h1>
             <p className="text-slate-500 font-medium mt-1">Manage academic branches, HOD assignments, and curriculum codes.</p>
           </div>
           {isAdmin && (

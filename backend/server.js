@@ -133,7 +133,26 @@ app.post('/api/auth/register-teacher', async (req, res) => {
 
 
 
+// --- APPROVE TEACHER ---
+app.post('/api/auth/approve-teacher/:id', authenticateToken, async (req, res) => {
+    const teacherId = req.params.id;
+    try {
+        // We update the status to 'Active' to match your Login check (user.status !== "Active")
+        const [result] = await db.query(
+            "UPDATE teachers SET status = 'Active' WHERE id = ?", 
+            [teacherId]
+        );
 
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: "Teacher not found" });
+        }
+
+        res.json({ success: true, message: "Teacher approved and activated" });
+    } catch (err) {
+        console.error("Approval Error:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 
 
 
@@ -266,6 +285,10 @@ const [subjects] = await db.query(`SELECT id, name, code, semester, credits, dep
         res.json({ departments: depts, teachers, pendingTeachers: pending, students, batches, subjects, teacherAssignments: assignments });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+
+
+
 
 
 

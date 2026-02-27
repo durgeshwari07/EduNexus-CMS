@@ -797,6 +797,7 @@ import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
 // IMPORTING THE GLOBAL TEAM SIDEBAR
+
 import Sidebar from '../components/Sidebar'; 
 import './styles/results.css';
 

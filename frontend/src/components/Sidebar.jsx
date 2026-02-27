@@ -605,6 +605,148 @@
 
 
 
+// import React from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import { 
+//   LayoutDashboard, 
+//   Building2, 
+//   Users, 
+//   GraduationCap, 
+//   BarChart3, 
+//   Settings, 
+//   LogOut, 
+//   ExternalLink, 
+//   BookOpen,
+//   LayoutGrid, 
+//   FileText
+// } from 'lucide-react';
+
+// export default function Sidebar({ userRole, currentUser, currentPage, setCurrentPage, onLogout, isHidden }) {
+//   const navigate = useNavigate();
+//   const isAdmin = userRole === 'admin';
+
+//   // --- MENU CONFIGURATION ---
+//   const menuItems = [
+//     { id: 'overview', label: 'Overview', icon: LayoutDashboard, adminOnly: false },
+//     { id: 'departments', label: 'Departments', icon: Building2, adminOnly: false }, // Added back here
+//     { id: 'teachers', label: 'Teachers', icon: Users, adminOnly: false },
+//     { id: 'subjects', label: 'Subjects', icon: FileText, adminOnly: false },
+//     { id: 'students', label: 'Students', icon: GraduationCap, adminOnly: false },
+//     { id: 'reports', label: 'Reports', icon: BarChart3, adminOnly: true },
+//     { id: 'result-ledger', label: 'Master Result Ledger', icon: LayoutGrid, adminOnly: false },
+//   ];
+
+//   return (
+//     <aside 
+//       className="w-64 border-r border-slate-200 bg-white flex flex-col h-screen sticky top-0 shrink-0 transition-all duration-300 z-50 overflow-hidden"
+//       style={{ marginLeft: isHidden ? '-260px' : '0px' }}
+//     >
+//       {/* TOP SECTION: PROFILE & NAV */}
+//       <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
+//         {/* USER PROFILE CARD */}
+//         <div className="flex items-center gap-3 mb-8">
+//           <div className="size-10 rounded-full bg-[#136dec] flex items-center justify-center text-white font-bold uppercase shrink-0">
+//             {currentUser?.name?.charAt(0) || (isAdmin ? 'A' : 'T')}
+//           </div>
+//           <div className="min-w-0">
+//             <h1 className="text-sm font-bold leading-tight truncate">
+//               {currentUser?.name || (isAdmin ? 'Admin User' : 'Teacher')}
+//             </h1>
+//             <p className="text-slate-500 text-xs font-normal capitalize">
+//               {userRole === 'admin' ? 'System Administrator' : 'Faculty Member'}
+//             </p>
+//           </div>
+//         </div>
+
+//         {/* MAIN NAVIGATION ITEMS */}
+//         <nav className="space-y-1">
+//           {menuItems.map((item) => {
+//             // Role-based access control
+//             if (item.adminOnly && !isAdmin) return null;
+            
+//             const Icon = item.icon;
+//             const isActive = currentPage === item.id;
+            
+//             return (
+//               <button
+//                 key={item.id}
+//                 onClick={() => {
+//                   if (item.id === 'result-ledger') {
+//                     navigate('/results');
+//                   } else {
+//                     setCurrentPage(item.id);
+//                     navigate('/dashboard'); 
+//                   }
+//                 }}
+//                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+//                   isActive 
+//                     ? 'bg-[#136dec]/10 text-[#136dec] font-semibold' 
+//                     : 'text-slate-600 hover:bg-slate-50'
+//                 }`}
+//               >
+//                 <Icon size={18} />
+//                 <span className="text-sm">{item.label}</span>
+//               </button>
+//             );
+//           })}
+//         </nav>
+//       </div>
+      
+//       {/* BOTTOM ACTION SECTION: WORKSPACE, LOGOUT & SETTINGS */}
+//       <div className="p-6 border-t border-slate-100 bg-white">
+//         <div className="mb-4 space-y-1">
+//            {/* CONTEXTUAL WORKSPACE BUTTON */}
+//            {userRole === 'teacher' ? (
+//              <button 
+//                 onClick={() => { setCurrentPage('faculty-portal'); navigate('/dashboard'); }} 
+//                 className={`flex items-center gap-3 px-3 py-2 w-full text-sm font-medium rounded-lg transition-all ${
+//                   currentPage === 'faculty-portal' 
+//                     ? 'bg-blue-600 text-white shadow-md' 
+//                     : 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+//                 }`}
+//              >
+//                 <BookOpen size={18}/> My Workspace
+//              </button>
+//            ) : (
+//              <button 
+//                 onClick={() => { setCurrentPage('faculty-view'); navigate('/dashboard'); }} 
+//                 className={`flex items-center gap-3 px-3 py-2 w-full text-sm font-medium rounded-lg transition-all ${
+//                   currentPage === 'faculty-view' 
+//                     ? 'bg-slate-800 text-white shadow-md' 
+//                     : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'
+//                 }`}
+//              >
+//                 <ExternalLink size={18}/> Faculty Portal View
+//              </button>
+//            )}
+//         </div>
+
+//         {/* STATUS INDICATOR */}
+//         <div className="bg-emerald-50 text-emerald-600 px-3 py-2 rounded-lg text-[10px] font-bold uppercase mb-4 flex items-center gap-2">
+//           <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span> 
+//           SYSTEM ONLINE
+//         </div>
+        
+//         {/* SETTINGS BUTTON */}
+//         <button className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-[#136dec] w-full text-sm font-medium mb-1 transition-colors">
+//           <Settings size={18}/> Settings
+//         </button>
+        
+//         {/* LOGOUT BUTTON */}
+//         <button 
+//           onClick={onLogout} 
+//           className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-red-500 w-full text-sm font-medium group transition-colors"
+//         >
+//           <LogOut size={18} className="group-hover:translate-x-1 transition-transform" /> 
+//           Logout
+//         </button>
+//       </div>
+//     </aside>
+//   );
+// }
+
+
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -625,10 +767,9 @@ export default function Sidebar({ userRole, currentUser, currentPage, setCurrent
   const navigate = useNavigate();
   const isAdmin = userRole === 'admin';
 
-  // --- MENU CONFIGURATION ---
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, adminOnly: false },
-    { id: 'departments', label: 'Departments', icon: Building2, adminOnly: false }, // Added back here
+    { id: 'departments', label: 'Departments', icon: Building2, adminOnly: false },
     { id: 'teachers', label: 'Teachers', icon: Users, adminOnly: false },
     { id: 'subjects', label: 'Subjects', icon: FileText, adminOnly: false },
     { id: 'students', label: 'Students', icon: GraduationCap, adminOnly: false },
@@ -641,27 +782,19 @@ export default function Sidebar({ userRole, currentUser, currentPage, setCurrent
       className="w-64 border-r border-slate-200 bg-white flex flex-col h-screen sticky top-0 shrink-0 transition-all duration-300 z-50 overflow-hidden"
       style={{ marginLeft: isHidden ? '-260px' : '0px' }}
     >
-      {/* TOP SECTION: PROFILE & NAV */}
-      <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
-        {/* USER PROFILE CARD */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="size-10 rounded-full bg-[#136dec] flex items-center justify-center text-white font-bold uppercase shrink-0">
-            {currentUser?.name?.charAt(0) || (isAdmin ? 'A' : 'T')}
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-sm font-bold leading-tight truncate">
-              {currentUser?.name || (isAdmin ? 'Admin User' : 'Teacher')}
-            </h1>
-            <p className="text-slate-500 text-xs font-normal capitalize">
-              {userRole === 'admin' ? 'System Administrator' : 'Faculty Member'}
-            </p>
-          </div>
-        </div>
+      {/* --- LOGO HEADER (Matches Header Component Height) --- */}
+      <div className="h-12 w-full shrink-0  flex items-center bg-white px-8">
+        <img 
+          src="https://pub-1407f82391df4ab1951418d04be76914.r2.dev/uploads/8c7338dc-8987-48b2-b26f-82ea8e223018.jpeg" // Replace with your image file path
+          alt="UniDesk Logo" 
+          className="h-full w-full object-contain object-left" 
+        />
+      </div>
 
-        {/* MAIN NAVIGATION ITEMS */}
+      {/* SCROLLABLE NAV */}
+      <div className="p-6 pt-8 flex-1 overflow-y-auto custom-scrollbar">
         <nav className="space-y-1">
           {menuItems.map((item) => {
-            // Role-based access control
             if (item.adminOnly && !isAdmin) return null;
             
             const Icon = item.icon;
@@ -692,51 +825,32 @@ export default function Sidebar({ userRole, currentUser, currentPage, setCurrent
         </nav>
       </div>
       
-      {/* BOTTOM ACTION SECTION: WORKSPACE, LOGOUT & SETTINGS */}
+      {/* BOTTOM ACTION SECTION */}
       <div className="p-6 border-t border-slate-100 bg-white">
         <div className="mb-4 space-y-1">
-           {/* CONTEXTUAL WORKSPACE BUTTON */}
            {userRole === 'teacher' ? (
-             <button 
-                onClick={() => { setCurrentPage('faculty-portal'); navigate('/dashboard'); }} 
-                className={`flex items-center gap-3 px-3 py-2 w-full text-sm font-medium rounded-lg transition-all ${
-                  currentPage === 'faculty-portal' 
-                    ? 'bg-blue-600 text-white shadow-md' 
-                    : 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                }`}
-             >
+             <button onClick={() => { setCurrentPage('faculty-portal'); navigate('/dashboard'); }} 
+                className={`flex items-center gap-3 px-3 py-2 w-full text-sm font-medium rounded-lg transition-all ${currentPage === 'faculty-portal' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-600 bg-blue-50 hover:bg-blue-100'}`}>
                 <BookOpen size={18}/> My Workspace
              </button>
            ) : (
-             <button 
-                onClick={() => { setCurrentPage('faculty-view'); navigate('/dashboard'); }} 
-                className={`flex items-center gap-3 px-3 py-2 w-full text-sm font-medium rounded-lg transition-all ${
-                  currentPage === 'faculty-view' 
-                    ? 'bg-slate-800 text-white shadow-md' 
-                    : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'
-                }`}
-             >
+             <button onClick={() => { setCurrentPage('faculty-view'); navigate('/dashboard'); }} 
+                className={`flex items-center gap-3 px-3 py-2 w-full text-sm font-medium rounded-lg transition-all ${currentPage === 'faculty-view' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'}`}>
                 <ExternalLink size={18}/> Faculty Portal View
              </button>
            )}
         </div>
 
-        {/* STATUS INDICATOR */}
         <div className="bg-emerald-50 text-emerald-600 px-3 py-2 rounded-lg text-[10px] font-bold uppercase mb-4 flex items-center gap-2">
           <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span> 
           SYSTEM ONLINE
         </div>
         
-        {/* SETTINGS BUTTON */}
-        <button className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-[#136dec] w-full text-sm font-medium mb-1 transition-colors">
+        {/* <button className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-[#136dec] w-full text-sm font-medium mb-1 transition-colors">
           <Settings size={18}/> Settings
-        </button>
+        </button> */}
         
-        {/* LOGOUT BUTTON */}
-        <button 
-          onClick={onLogout} 
-          className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-red-500 w-full text-sm font-medium group transition-colors"
-        >
+        <button onClick={onLogout} className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-red-500 w-full text-sm font-medium group transition-colors">
           <LogOut size={18} className="group-hover:translate-x-1 transition-transform" /> 
           Logout
         </button>

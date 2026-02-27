@@ -66,15 +66,15 @@ export default function Teachers({ userRole, teachers = [], departments = [], on
   const currentTeachers = filteredTeachers.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
-    <div className="max-w-7xl mx-auto p-10 animate-in fade-in duration-500 min-h-screen bg-[#f8fafc]">
+    <div className="max-w-7xl mx-auto p-2 animate-in fade-in duration-500 min-h-screen bg-[#f8fafc]">
       
       {/* 🏛️ HEADER SECTION */}
       <div className="mb-10 text-left flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
+          {/* <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
             <LayoutGrid size={12} /> DASHBOARD / <span className="text-blue-600">FACULTY</span>
-          </div>
-          <h1 className="text-[2.5rem] font-black text-[#0f172a] leading-tight tracking-tight">
+          </div> */}
+          <h1 className="text-[2rem] font-black text-[#0f172a] leading-tight tracking-tight">
             Faculty Directory
           </h1>
           <p className="text-slate-500 font-medium text-lg mt-1">
