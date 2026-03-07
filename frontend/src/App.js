@@ -1,6 +1,4 @@
 
-
-
 // import React, { useState, useEffect, useCallback } from 'react';
 // import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 // import axios from 'axios';
@@ -21,6 +19,7 @@
 // import SubjectsManagement from './pages/SubjectsManagement';
 // import Reports from './pages/Reports'; 
 // import DocumentVerification from './pages/DocumentVerification';
+// import ElectiveAssignment from './pages/ElectiveAssignment';
 
 // /* PORTALS & VIEWS */
 // import StudentPortal from './assets/StudentPortal';
@@ -32,7 +31,7 @@
 // const API_URL = 'http://localhost:5000/api';
 // export const API = axios.create({ baseURL: API_URL });
 
-// // ---  AUTH INTERCEPTOR ---
+// // --- AUTH INTERCEPTOR ---
 // API.interceptors.request.use((config) => {
 //   const user = JSON.parse(localStorage.getItem('current_user'));
 //   if (user && user.token) {
@@ -73,7 +72,8 @@
 //         setBatches(res.data.batches || []); 
 //         setSubjects(res.data.subjects || []);
 //         setTeacherAssignments(res.data.teacherAssignments || []);
-//         setAllMarks(res.data.marks || []);
+//         // CRITICAL FIX: Ensure state variable matches the backend key 'allMarks'
+//         setAllMarks(res.data.allMarks || []);
 //       }
 //     } catch (err) { 
 //       console.error("Master Sync failed.", err);
@@ -85,7 +85,7 @@
 
 //   useEffect(() => { syncData(); }, [syncData, page]);
 
-//   // ---  AUTH HANDLERS ---
+//   // --- AUTH HANDLERS ---
 //   const handleAuth = (userRole, userData) => {
 //     setRole(userRole);
 //     setCurrentUser(userData);
@@ -115,7 +115,6 @@
 //       <StarField />
       
 //       <Routes>
-//         {/* PUBLIC & AUTH ROUTES */}
 //         <Route path="/" element={<Home />} />
         
 //         <Route path="/login" element={
@@ -145,7 +144,7 @@
 //           />
 //         } />
 
-//         {/*  PROTECTED DASHBOARD ROUTES */}
+//         {/* PROTECTED DASHBOARD ROUTES */}
 //         <Route path="/dashboard/*" element={
 //           role && role !== 'student' ? (
 //             <DashboardLayout 
@@ -156,27 +155,62 @@
 //                 <Overview 
 //                   userRole={role} departments={departments} teachers={approvedTeachers} 
 //                   pendingTeachers={pendingRequests} allStudents={allStudents} subjects={subjects} 
-//                   onApprove={async (id) => { await API.post(`/approve-teacher/${id}`); syncData(); }} 
+//                   onApprove={async (id) => { 
+//                     await API.post(`/auth/approve-teacher/${id}`); 
+//                     syncData(); 
+//                   }} 
 //                 />
 //               )}
 
 //               {page === 'departments' && (
-//                 <Departments 
-//                   userRole={role} departments={departments} 
-//                   onAddDept={async (d) => { await API.post('/departments', d); syncData(); }} 
-//                   onDeleteDept={async (id) => { await API.delete(`/departments/${id}`); syncData(); }} 
-//                 />
+//                 role === 'admin' ? (
+//                   <Departments 
+//                     userRole={role} 
+//                     departments={departments} 
+//                     onAddDept={async (d) => { await API.post('/departments', d); syncData(); }} 
+//                     onDeleteDept={async (id) => { await API.delete(`/departments/${id}`); syncData(); }} 
+//                   />
+//                 ) : (
+//                   <Navigate to="/dashboard" replace />
+//                 )
 //               )}
 
-//               {page === 'teachers' && <Teachers userRole={role} teachers={approvedTeachers} departments={departments} onRefresh={syncData} />}
+//               {page === 'teachers' && (
+//                 role === 'admin' ? (
+//                   <Teachers 
+//                     userRole={role} 
+//                     teachers={approvedTeachers} 
+//                     departments={departments} 
+//                     onRefresh={syncData} 
+//                   />
+//                 ) : (
+//                   <Navigate to="/dashboard" replace />
+//                 )
+//               )}
 
 //               {page === 'students' && (
 //                 <Students 
-//                   userRole={role} batches={batches} allStudents={allStudents} displayDepts={departments}
+//                   userRole={role} 
+//                   currentUser={currentUser} // ADDED: Required for teacher batch card filtering
+//                   teacherAssignments={teacherAssignments} // ADDED: Required for teacher batch card filtering
+//                   batches={batches} 
+//                   allStudents={allStudents} 
+//                   displayDepts={departments}
+//                   subjects={subjects} 
+//                   allMarks={allMarks}
 //                   onViewProfile={(s) => { setSelectedStudent(s); setPage('student-portal-view'); }}
 //                   onAddStudent={async (d) => { await API.post('/students', d); syncData(); }} 
 //                   onDeleteStudent={async (id) => { await API.delete(`/students/${id}`); syncData(); }} 
 //                   onAddBatch={async (b) => { await API.post('/batches', b); syncData(); }} 
+//                   updateData={async (p) => { 
+//                     try {
+//                         if (p.action === 'edit') await API.put(`/batches/${p.batch.id}`, p.batch);
+//                         else if (p.action === 'delete') await API.delete(`/batches/${p.id}`);
+//                         await syncData();
+//                     } catch (err) {
+//                         alert(err.response?.data?.message || "Operation failed.");
+//                     }
+//                   }}
 //                 />
 //               )}
 
@@ -217,28 +251,36 @@
 //           ) : <Navigate to="/login" replace />
 //         } />
         
-//         {/*  RESULT MANAGEMENT MODULE */}
+//         {/* RESULT MANAGEMENT MODULE */}
 //         <Route path="/results" element={ 
-//           role ? <GatewayView batches={batches} allStudents={allStudents} displayDepts={departments} userRole={role} currentUser={currentUser} onLogout={handleLogout} /> 
+//           role ? <GatewayView 
+//                    batches={batches} 
+//                    allStudents={allStudents} 
+//                    displayDepts={departments} 
+//                    userRole={role} 
+//                    currentUser={currentUser} 
+//                    onLogout={handleLogout} 
+//                    setCurrentPage={setPage} 
+//                  /> 
 //           : <Navigate to="/login" /> 
 //         } />
         
 //         <Route path="/results/master/:batchId" element={ 
-//           role ? <MasterView userRole={role} currentUser={currentUser} onLogout={handleLogout} /> 
+//           role ? <MasterView 
+//                    userRole={role} 
+//                    currentUser={currentUser} 
+//                    onLogout={handleLogout} 
+//                    setCurrentPage={setPage} 
+//                  /> 
 //           : <Navigate to="/login" /> 
 //         } />
 
-//         {/*  STUDENT PORTAL */}
 //         <Route path="/student-portal/:id" element={<StudentPortal isPreview={false} />} />
-
-//         {/*  CATCH-ALL */}
 //         <Route path="*" element={<Navigate to="/" replace />} />
 //       </Routes>
 //     </div> 
 //   );
 // }
-
-
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
@@ -260,6 +302,7 @@ import Students from './pages/Students';
 import SubjectsManagement from './pages/SubjectsManagement';
 import Reports from './pages/Reports'; 
 import DocumentVerification from './pages/DocumentVerification';
+
 
 /* PORTALS & VIEWS */
 import StudentPortal from './assets/StudentPortal';
@@ -312,7 +355,7 @@ export default function App() {
         setBatches(res.data.batches || []); 
         setSubjects(res.data.subjects || []);
         setTeacherAssignments(res.data.teacherAssignments || []);
-        setAllMarks(res.data.marks || []);
+        setAllMarks(res.data.allMarks || []);
       }
     } catch (err) { 
       console.error("Master Sync failed.", err);
@@ -354,7 +397,6 @@ export default function App() {
       <StarField />
       
       <Routes>
-        {/* PUBLIC & AUTH ROUTES */}
         <Route path="/" element={<Home />} />
         
         <Route path="/login" element={
@@ -396,7 +438,6 @@ export default function App() {
                   userRole={role} departments={departments} teachers={approvedTeachers} 
                   pendingTeachers={pendingRequests} allStudents={allStudents} subjects={subjects} 
                   onApprove={async (id) => { 
-                    // FIXED: Added /auth/ prefix which is likely required by your backend
                     await API.post(`/auth/approve-teacher/${id}`); 
                     syncData(); 
                   }} 
@@ -404,22 +445,43 @@ export default function App() {
               )}
 
               {page === 'departments' && (
-                <Departments 
-                  userRole={role} departments={departments} 
-                  onAddDept={async (d) => { await API.post('/departments', d); syncData(); }} 
-                  onDeleteDept={async (id) => { await API.delete(`/departments/${id}`); syncData(); }} 
-                />
+                role === 'admin' ? (
+                  <Departments 
+                    userRole={role} departments={departments} 
+                    onAddDept={async (d) => { await API.post('/departments', d); syncData(); }} 
+                    onDeleteDept={async (id) => { await API.delete(`/departments/${id}`); syncData(); }} 
+                  />
+                ) : <Navigate to="/dashboard" replace />
               )}
 
-              {page === 'teachers' && <Teachers userRole={role} teachers={approvedTeachers} departments={departments} onRefresh={syncData} />}
+              {page === 'teachers' && (
+                role === 'admin' ? (
+                  <Teachers 
+                    userRole={role} teachers={approvedTeachers} 
+                    departments={departments} onRefresh={syncData} 
+                  />
+                ) : <Navigate to="/dashboard" replace />
+              )}
 
               {page === 'students' && (
                 <Students 
-                  userRole={role} batches={batches} allStudents={allStudents} displayDepts={departments}
+                  userRole={role} currentUser={currentUser} 
+                  teacherAssignments={teacherAssignments} batches={batches} 
+                  allStudents={allStudents} displayDepts={departments}
+                  subjects={subjects} allMarks={allMarks}
                   onViewProfile={(s) => { setSelectedStudent(s); setPage('student-portal-view'); }}
                   onAddStudent={async (d) => { await API.post('/students', d); syncData(); }} 
                   onDeleteStudent={async (id) => { await API.delete(`/students/${id}`); syncData(); }} 
                   onAddBatch={async (b) => { await API.post('/batches', b); syncData(); }} 
+                  updateData={async (p) => { 
+                    try {
+                        if (p.action === 'edit') await API.put(`/batches/${p.batch.id}`, p.batch);
+                        else if (p.action === 'delete') await API.delete(`/batches/${p.id}`);
+                        await syncData();
+                    } catch (err) {
+                        alert(err.response?.data?.message || "Operation failed.");
+                    }
+                  }}
                 />
               )}
 
@@ -437,10 +499,11 @@ export default function App() {
                 />
               )}
 
+              
+
               {page === 'faculty-portal' && (
                 <FacultyPortal 
-                  currentUser={currentUser} 
-                  userRole={role} 
+                  currentUser={currentUser} userRole={role} 
                   externalData={{ teachers: approvedTeachers, subjects, students: allStudents, teacherAssignments }}
                 />
               )}
@@ -463,31 +526,21 @@ export default function App() {
         {/* RESULT MANAGEMENT MODULE */}
         <Route path="/results" element={ 
           role ? <GatewayView 
-                   batches={batches} 
-                   allStudents={allStudents} 
-                   displayDepts={departments} 
-                   userRole={role} 
-                   currentUser={currentUser} 
-                   onLogout={handleLogout} 
-                   setCurrentPage={setPage} // Added state handler
-                 /> 
-          : <Navigate to="/login" /> 
+                   batches={batches} allStudents={allStudents} 
+                   displayDepts={departments} userRole={role} 
+                   currentUser={currentUser} onLogout={handleLogout} 
+                   setCurrentPage={setPage} 
+                 /> : <Navigate to="/login" /> 
         } />
         
         <Route path="/results/master/:batchId" element={ 
           role ? <MasterView 
-                   userRole={role} 
-                   currentUser={currentUser} 
-                   onLogout={handleLogout} 
-                   setCurrentPage={setPage} // Added state handler
-                 /> 
-          : <Navigate to="/login" /> 
+                   userRole={role} currentUser={currentUser} 
+                   onLogout={handleLogout} setCurrentPage={setPage} 
+                 /> : <Navigate to="/login" /> 
         } />
 
-        {/* STUDENT PORTAL */}
         <Route path="/student-portal/:id" element={<StudentPortal isPreview={false} />} />
-
-        {/* CATCH-ALL */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div> 

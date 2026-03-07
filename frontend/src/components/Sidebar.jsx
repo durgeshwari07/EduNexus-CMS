@@ -769,12 +769,12 @@ export default function Sidebar({ userRole, currentUser, currentPage, setCurrent
 
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, adminOnly: false },
-    { id: 'departments', label: 'Departments', icon: Building2, adminOnly: false },
-    { id: 'teachers', label: 'Teachers', icon: Users, adminOnly: false },
+    { id: 'departments', label: 'Departments', icon: Building2, adminOnly: true },
+    { id: 'teachers', label: 'Teachers', icon: Users, adminOnly: true },
     { id: 'subjects', label: 'Subjects', icon: FileText, adminOnly: false },
     { id: 'students', label: 'Students', icon: GraduationCap, adminOnly: false },
     { id: 'reports', label: 'Reports', icon: BarChart3, adminOnly: true },
-    { id: 'result-ledger', label: 'Master Result Ledger', icon: LayoutGrid, adminOnly: false },
+    { id: 'result-ledger', label: 'Master Result Ledger', icon: LayoutGrid, adminOnly: true },
   ];
 
   return (
@@ -826,7 +826,7 @@ export default function Sidebar({ userRole, currentUser, currentPage, setCurrent
       </div>
       
       {/* BOTTOM ACTION SECTION */}
-      <div className="p-6 border-t border-slate-100 bg-white">
+      {/* <div className="p-6 border-t border-slate-100 bg-white">
         <div className="mb-4 space-y-1">
            {userRole === 'teacher' ? (
              <button onClick={() => { setCurrentPage('faculty-portal'); navigate('/dashboard'); }} 
@@ -839,7 +839,28 @@ export default function Sidebar({ userRole, currentUser, currentPage, setCurrent
                 <ExternalLink size={18}/> Faculty Portal View
              </button>
            )}
-        </div>
+        </div> */}
+
+        <div className="p-6 border-t border-slate-100 bg-white">
+  <div className="mb-4 space-y-1">
+    {/* Allowed for both Teacher and Admin roles */}
+    {(userRole === 'teacher' || userRole === 'admin') && (
+      <button 
+        onClick={() => { 
+          setCurrentPage('faculty-portal'); 
+          navigate('/dashboard'); 
+        }} 
+        className={`flex items-center gap-3 px-3 py-2 w-full text-sm font-medium rounded-lg transition-all 
+          ${currentPage === 'faculty-portal' 
+            ? 'bg-blue-600 text-white shadow-md' 
+            : 'text-blue-600 bg-blue-50 hover:bg-blue-100'}`}
+      >
+        <BookOpen size={18}/> 
+        <span>My Workspace</span>
+      </button>
+    )}
+  </div>
+
 
         <div className="bg-emerald-50 text-emerald-600 px-3 py-2 rounded-lg text-[10px] font-bold uppercase mb-4 flex items-center gap-2">
           <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span> 
@@ -858,3 +879,11 @@ export default function Sidebar({ userRole, currentUser, currentPage, setCurrent
     </aside>
   );
 }
+
+
+
+
+
+
+
+

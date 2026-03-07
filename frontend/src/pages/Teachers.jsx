@@ -84,7 +84,7 @@ export default function Teachers({ userRole, teachers = [], departments = [], on
       </div>
 
       {/* 📊 STATISTICS GRID */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-8">
         {stats.map((stat, idx) => (
           <div key={idx} className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-2">
@@ -133,27 +133,27 @@ export default function Teachers({ userRole, teachers = [], departments = [], on
           <table className="min-w-full text-left">
             <thead className="bg-white border-b border-slate-100">
               <tr>
-                <th className="px-8 py-7 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">NAME</th>
-                <th className="px-8 py-7 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">DEPT</th>
-                <th className="px-8 py-7 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">QUALIFICATION</th>
-                <th className="px-8 py-7 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">EXP</th>
-                <th className="px-8 py-7 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">EMAIL</th>
-                <th className="px-8 py-7 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">PHONE</th>
-                <th className="px-8 py-7 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">ACTIONS</th>
+                <th className="px-8 py-7 text-[12px] font-black text-slate-800 uppercase tracking-[0.2em]">NAME</th>
+                <th className="px-8 py-7 text-[12px] font-black text-slate-800 uppercase tracking-[0.2em]">DEPT</th>
+                <th className="px-8 py-7 text-[12px] font-black text-slate-800 uppercase tracking-[0.2em] text-center">QUALIFICATION</th>
+                <th className="px-8 py-7 text-[12px] font-black text-slate-800 uppercase tracking-[0.2em] text-center">EXP</th>
+                <th className="px-8 py-7 text-[12px] font-black text-slate-800 uppercase tracking-[0.2em]">EMAIL</th>
+                <th className="px-8 py-7 text-[12px] font-black text-slate-800 uppercase tracking-[0.2em]">PHONE</th>
+                <th className="px-8 py-7 text-[12px] font-black text-slate-800 uppercase tracking-[0.2em] text-right">ACTIONS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 bg-white">
               {currentTeachers.map((teacher) => (
                 <tr key={teacher.id} className="hover:bg-blue-50/20 transition-colors group">
-                  <td className="px-8 py-6 whitespace-nowrap text-sm font-black text-[#0f172a] uppercase tracking-tight">
+                  <td className="px-8 py-6 whitespace-nowrap text-sm font-bold text-slate-800 uppercase tracking-tight">
                     {teacher.name || `${teacher.first_name} ${teacher.last_name}`}
                   </td>
                    <td className="px-8 py-6 whitespace-nowrap">
-                    <span className="text-[13px] font-black text-[#0f172a] uppercase tracking-tighter">
+                    <span className="px-8 py-6 whitespace-nowrap text-sm font-bold text-slate-800 uppercase tracking-tighter">
                       {departments.find(d => String(d.id) === String(teacher.dept_id))?.name || 'GENERAL'}
                     </span>
                   </td>
-                  <td className="px-8 py-6 whitespace-nowrap text-center text-sm font-black text-[#0f172a] uppercase tracking-tighter">
+                  <td className="px-8 py-6 whitespace-nowrap text-sm font-bold text-slate-800 uppercase tracking-tighter">
                     {teacher.qualification}
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap text-center">
