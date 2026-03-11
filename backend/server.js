@@ -1279,6 +1279,29 @@ app.get("/", (req, res) => {
 });
 
 
+// GET ALL BATCHES
+app.get('/api/batches', async (req, res) => {
+    try {
+        const [rows] = await db.query(`
+            SELECT b.*, d.name as deptName 
+            FROM batches b 
+            LEFT JOIN departments d ON b.dept_id = d.id
+        `);
+
+        res.json({
+            success: true,
+            batches: rows
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+
 // --- 10. 🚪 SERVER START ---
 app.listen(PORT, () => {
     console.log(`🚀 SERVER RUNNING ON: http://localhost:${PORT}`);
