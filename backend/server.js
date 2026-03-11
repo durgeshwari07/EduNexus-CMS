@@ -1237,6 +1237,46 @@ app.get('/api/result-distribution', async (req, res) => {
 
 
 
+app.get('/api/analytics/holistic-stats', async (req, res) => {
+    const { year } = req.query; // Expects ?year=2023-2024
+
+    try {
+        // 1. Average Academic Score for the whole year
+        const [acad] = await db.query(
+            'SELECT ROUND(AVG(total), 0) as avg_score FROM marks WHERE academicYear = ?', 
+            [year]
+        );
+        
+        // 2. Average Extracurriculars for students in that year
+        const [extra] = await db.query(`
+            SELECT 
+                ROUND(AVG(ncc_score), 0) as ncc_avg, 
+                ROUND(AVG(sports_score), 0) as sports_avg, 
+                ROUND(AVG(nss_score), 0) as nss_avg 
+            FROM students 
+            WHERE academicYear = ?`, 
+            [year]
+        );
+
+        const stats = extra[0];
+        const academic = acad[0].avg_score || 0;
+
+        // Structured for your frontend .map() loop
+        res.json([
+            { label: 'Avg Academic', val: `${academic}%`, color: 'bg-blue-500', icon: 'GraduationCap' },
+            { label: 'NCC Participation', val: `${stats.ncc_avg || 0}%`, color: 'bg-indigo-500', icon: 'Users' },
+            { label: 'Sports Score', val: `${stats.sports_avg || 0}%`, color: 'bg-cyan-500', icon: 'Trophy' },
+            { label: 'NSS Contribution', val: `${stats.nss_avg || 0}%`, color: 'bg-slate-500', icon: 'Activity' },
+        ]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+app.get("/", (req, res) => {
+    res.send("🚀 EduNexus CMS Backend API Running Successfully");
+});
 
 
 // --- 10. 🚪 SERVER START ---
