@@ -1,10 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { 
   Search, Download, Plus, Users, CheckCircle, 
-  X, Camera, UserCircle, Hash, GraduationCap, Trash2, 
-  Upload, ChevronLeft, ChevronRight, TrendingUp 
+  X, UserCircle, Hash, GraduationCap, Trash2, 
+  Upload, ChevronLeft, ChevronRight, Filter 
 } from 'lucide-react';
 
 // --- HELPER: MAP EXCEL HEADERS TO DATABASE KEYS ---
@@ -15,9 +15,7 @@ const mapExcelDataToStudent = (row, batchId) => {
     prNo: row['PR No'] || row['prNo'] || null,
     email: row['Email'] || row['email'] || null,
     phone: row['Phone'] || row['phone'] || "",
-    // semester: parseInt(row['Semester']) || 1,
     division: row['Division'] || 'A',
-    // academicYear: row['Year'] || '2024-25',
     dob: row['DOB'] || null, 
     address: row['Address'] || "",
     guardianName: row['Guardian'] || "",
@@ -35,12 +33,38 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isImporting, setIsImporting] = useState(false);
+  const [academicFilter, setAcademicFilter] = useState('All'); // New state for All, Pass, Fail
   
   const [currentPage, setCurrentPage] = useState(1);
   const studentsPerPage = 10;
 
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+
+  // --- NEW: DYNAMIC PASS/FAIL LOGIC ENGINE ---
+  const getLiveStats = (student) => {
+    let failCount = 0;
+    let passCount = 0;
+
+    // Scan academicRecords for any Grade "F"
+    if (student.academicRecords && Array.isArray(student.academicRecords)) {
+      student.academicRecords.forEach(sem => {
+        sem.subjects?.forEach(sub => {
+          if (sub.grade?.toUpperCase() === 'F') {
+            failCount++;
+          } else if (sub.grade && sub.grade.trim() !== '') {
+            passCount++;
+          }
+        });
+      });
+    } else {
+      // Fallback to static props if records aren't provided
+      failCount = Number(student.failCount) || 0;
+      passCount = Number(student.passCount) || 0;
+    }
+
+    return { failCount, passCount, isClear: failCount === 0 };
+  };
 
   // 1. DYNAMIC STATISTICS
   const stats = [
@@ -50,11 +74,22 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
     { label: 'Active', value: students.filter(s => s.status === 'Active').length, icon: <CheckCircle size={18} />, color: 'bg-green-50 text-green-600' },
   ];
 
-  const filteredStudents = students.filter(s => 
-    s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.enrollmentNo?.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.prNo?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // 2. UPDATED FILTERING LOGIC
+  const filteredStudents = students.filter(s => {
+    const { isClear } = getLiveStats(s);
+
+    // Filter Logic
+    if (academicFilter === 'Pass' && !isClear) return false;
+    if (academicFilter === 'Fail' && isClear) return false;
+
+    // Search Query Filter
+    const matchesSearch = 
+      s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.enrollmentNo?.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.prNo?.toString().toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesSearch;
+  });
 
   const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
   const indexOfLastStudent = currentPage * studentsPerPage;
@@ -90,21 +125,17 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
 
   const triggerFileUpload = () => fileInputRef.current.click();
 
-  // 5. MANUAL FORM SUBMISSION WITH VALIDATION
   const handleFormSubmit = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    
     const phone = fd.get('phone');
     const name = fd.get('name');
 
-    // Name Validation: Only text
     if (!/^[a-zA-Z\s]+$/.test(name)) {
       alert("Name must only contain letters and spaces.");
       return;
     }
 
-    // Phone Validation: Exactly 10 digits
     if (!/^\d{10}$/.test(phone)) {
       alert("Phone number must be exactly 10 digits.");
       return;
@@ -116,9 +147,9 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
       prNo: fd.get('prNo'),
       email: fd.get('email'),
       phone: phone,
-      semester: parseInt(batch.sem) || 1, // Taken from Batch
+      semester: parseInt(batch.sem) || 1,
       division: fd.get('division'),
-      academicYear: batch.year || '2024-25', // Taken from Batch
+      academicYear: batch.year || '2024-25',
       dob: fd.get('dob'),
       address: fd.get('address'),
       guardianName: fd.get('guardianName'),
@@ -153,11 +184,13 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
       {/* TABLE ACTION BAR */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/30">
-          <div className="relative flex-1 min-w-[300px]">
+          
+          {/* SEARCH INPUT */}
+          <div className="relative flex-1 min-w-[250px]">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
-              placeholder="Search students by name, enrollment or PR No..." 
+              placeholder="Search students..." 
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -166,7 +199,28 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
               className="w-full pl-12 pr-4 py-3 text-sm font-medium border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-100 transition-all"
             />
           </div>
+
+          {/* NEW ACADEMIC FILTER TOGGLE */}
+          <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+            {['All', 'Pass', 'Fail'].map((status) => (
+              <button
+                key={status}
+                onClick={() => {
+                  setAcademicFilter(status);
+                  setCurrentPage(1);
+                }}
+                className={`px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                  academicFilter === status 
+                    ? 'bg-white text-blue-600 shadow-sm border border-slate-200/50' 
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
           
+          {/* ACTIONS */}
           <div className="flex gap-3">
             <input type="file" accept=".xlsx, .xls" hidden ref={fileInputRef} onChange={handleFileUpload} />
 
@@ -206,7 +260,9 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {currentStudents.length > 0 ? currentStudents.map((s, idx) => (
+              {currentStudents.length > 0 ? currentStudents.map((s, idx) => {
+                const { failCount, passCount, isClear } = getLiveStats(s);
+                return (
                 <tr key={s.id || idx} className="hover:bg-blue-50/30 transition-colors group">
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-4">
@@ -226,9 +282,9 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
                   <td className="px-6 py-5 text-center">
                     <div className="flex flex-col items-center gap-1.5">
                        <div className="flex gap-1">
-                          <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black px-2 py-0.5 rounded border border-emerald-100">{s.passCount || 0} Pass</span>
-                          <span className={`${s.failCount > 0 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-50 text-slate-400 border-slate-100'} text-[10px] font-black px-2 py-0.5 rounded border`}>
-                            {s.failCount || 0} Fail
+                          <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black px-2 py-0.5 rounded border border-emerald-100">{passCount} Pass</span>
+                          <span className={`${failCount > 0 ? 'bg-red-50 text-red-600 border-red-100 font-black shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100'} text-[10px] font-black px-2 py-0.5 rounded border`}>
+                            {failCount} Fail
                           </span>
                        </div>
                        <span className="text-[10px] text-slate-500 font-bold uppercase">Sem {s.semester} • Div {s.division}</span>
@@ -236,7 +292,11 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
                   </td>
                   <td className="px-6 py-5 text-center text-sm font-medium text-slate-500">{s.phone}</td>
                   <td className="px-6 py-5 text-center">
-                    <span className="text-xs font-bold px-3 py-1 rounded-full uppercase bg-green-100 text-green-700 border border-green-200">Active</span>
+                    <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase border ${
+                      isClear ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'
+                    }`}>
+                      {isClear ? 'Clear' : 'Failed'}
+                    </span>
                   </td>
                   <td className="px-6 py-5 text-right">
                     <div className="flex justify-end gap-2">
@@ -251,10 +311,10 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
                     </div>
                   </td>
                 </tr>
-              )) : (
+              )}) : (
                 <tr>
                   <td colSpan="6" className="px-6 py-24 text-center text-slate-400 text-sm font-bold uppercase tracking-widest">
-                    No students found in this batch
+                    No students found
                   </td>
                 </tr>
               )}
@@ -313,51 +373,25 @@ export default function StudentListTable({ batch, students, onAddStudent, onDele
             </div>
             <form onSubmit={handleFormSubmit} className="p-10 space-y-10 overflow-y-auto text-left">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                
-                {/* Name Validation: pattern allows only letters and spaces */}
-                <InputGroup 
-                    label="Full Name" 
-                    name="name" 
-                    placeholder="Enter Full Name" 
-                    pattern="[a-zA-Z\s]+" 
-                    title="Only letters and spaces allowed"
-                />
-
+                <InputGroup label="Full Name" name="name" placeholder="Enter Full Name" pattern="[a-zA-Z\s]+" title="Only letters and spaces allowed" />
                 <InputGroup label="Enrollment No" name="enrollmentNo" placeholder="e.g. ENR2024001" />
                 <InputGroup label="PR No (Permanent Registration)" name="prNo" placeholder="e.g. PR202400512" />
                 <InputGroup label="Institutional Email" name="email" type="email" placeholder="student@college.edu" />
-                
-                {/* Phone Validation: Max 10 chars, digits only */}
-                <InputGroup 
-                    label="Contact Number" 
-                    name="phone" 
-                    placeholder="10-digit Number" 
-                    type="tel" 
-                    pattern="\d{10}" 
-                    maxLength="10"
-                    title="Please enter exactly 10 digits"
-                />
-
-                {/* Auto-filled and Locked Semester */}
+                <InputGroup label="Contact Number" name="phone" placeholder="10-digit Number" type="tel" pattern="\d{10}" maxLength="10" title="Please enter exactly 10 digits" />
                 <div className="space-y-3">
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">Semester</label>
                     <div className="w-full border-2 border-slate-100 bg-slate-50 rounded-2xl p-5 text-sm font-black text-blue-600">
                         Semester {batch.sem || 1} (Locked to Batch)
                     </div>
                 </div>
-
                 <SelectGroup label="Division" name="division" options={['A', 'B', 'C', 'D']} />
-                
-                {/* Auto-filled and Locked Academic Cycle */}
                 <div className="space-y-3">
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">Academic Cycle</label>
                     <div className="w-full border-2 border-slate-100 bg-slate-50 rounded-2xl p-5 text-sm font-black text-slate-700">
                         {batch.year || '2024-25'} (From Batch)
                     </div>
                 </div>
-
                 <InputGroup label="Date of Birth" name="dob" type="date" />
-
                 <div className="md:col-span-2 space-y-3">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Permanent Address</label>
                   <textarea name="address" className="w-full border-2 border-slate-100 rounded-2xl p-5 text-sm font-medium outline-none focus:border-blue-200 transition-all min-h-[120px] text-slate-800" placeholder="Street, City, State, ZIP..."></textarea>

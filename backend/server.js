@@ -1237,45 +1237,79 @@ app.get('/api/result-distribution', async (req, res) => {
 
 
 
-app.get('/api/analytics/holistic-stats', async (req, res) => {
-    const { year } = req.query; // Expects ?year=2023-2024
+// app.get('/api/analytics/holistic-stats', async (req, res) => {
+//     const { year } = req.query; // Expects ?year=2023-2024
 
-    try {
-        // 1. Average Academic Score for the whole year
-        const [acad] = await db.query(
-            'SELECT ROUND(AVG(total), 0) as avg_score FROM marks WHERE academicYear = ?', 
-            [year]
-        );
+//     try {
+//         // 1. Average Academic Score for the whole year
+//         const [acad] = await db.query(
+//             'SELECT ROUND(AVG(total), 0) as avg_score FROM marks WHERE academicYear = ?', 
+//             [year]
+//         );
         
-        // 2. Average Extracurriculars for students in that year
-        const [extra] = await db.query(`
-            SELECT 
-                ROUND(AVG(ncc_score), 0) as ncc_avg, 
-                ROUND(AVG(sports_score), 0) as sports_avg, 
-                ROUND(AVG(nss_score), 0) as nss_avg 
-            FROM students 
-            WHERE academicYear = ?`, 
-            [year]
-        );
+//         // 2. Average Extracurriculars for students in that year
+//         const [extra] = await db.query(`
+//             SELECT 
+//                 ROUND(AVG(ncc_score), 0) as ncc_avg, 
+//                 ROUND(AVG(sports_score), 0) as sports_avg, 
+//                 ROUND(AVG(nss_score), 0) as nss_avg 
+//             FROM students 
+//             WHERE academicYear = ?`, 
+//             [year]
+//         );
 
-        const stats = extra[0];
-        const academic = acad[0].avg_score || 0;
+//         const stats = extra[0];
+//         const academic = acad[0].avg_score || 0;
 
-        // Structured for your frontend .map() loop
-        res.json([
-            { label: 'Avg Academic', val: `${academic}%`, color: 'bg-blue-500', icon: 'GraduationCap' },
-            { label: 'NCC Participation', val: `${stats.ncc_avg || 0}%`, color: 'bg-indigo-500', icon: 'Users' },
-            { label: 'Sports Score', val: `${stats.sports_avg || 0}%`, color: 'bg-cyan-500', icon: 'Trophy' },
-            { label: 'NSS Contribution', val: `${stats.nss_avg || 0}%`, color: 'bg-slate-500', icon: 'Activity' },
-        ]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+//         // Structured for your frontend .map() loop
+//         res.json([
+//             { label: 'Avg Academic', val: `${academic}%`, color: 'bg-blue-500', icon: 'GraduationCap' },
+//             { label: 'NCC Participation', val: `${stats.ncc_avg || 0}%`, color: 'bg-indigo-500', icon: 'Users' },
+//             { label: 'Sports Score', val: `${stats.sports_avg || 0}%`, color: 'bg-cyan-500', icon: 'Trophy' },
+//             { label: 'NSS Contribution', val: `${stats.nss_avg || 0}%`, color: 'bg-slate-500', icon: 'Activity' },
+//         ]);
+//     } catch (err) {
+//         res.status(500).json({ error: err.message });
+//     }
+// });
 
 
 
 // --- 10. 🚪 SERVER START ---
+
+// --- UPDATED ROUTE TO MATCH FRONTEND ---
+app.get('/api/analytics/holistic-averages', async (req, res) => {
+    try {
+        // Query to get averages for NCC, NSS, and Sports based on subject names
+        const [rows] = await db.query(`
+            SELECT 
+                s.name, 
+                AVG(m.total) as avgVal 
+            FROM marks m 
+            JOIN subjects s ON m.subject_id = s.id 
+            WHERE s.name IN ('Ncc', 'NSS', 'Sports') 
+            GROUP BY s.name
+        `);
+
+        // Format the array into a single object for the frontend
+        const stats = {
+            ncc: 0,
+            nss: 0,
+            sports: 0
+        };
+
+        rows.forEach(row => {
+            const key = row.name.toLowerCase(); // converts 'Ncc' to 'ncc'
+            stats[key] = Math.round(row.avgVal || 0);
+        });
+
+        res.json(stats);
+    } catch (err) {
+        console.error("Holistic Stats Error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 SERVER RUNNING ON: http://localhost:${PORT}`);
 });
