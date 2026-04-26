@@ -11,7 +11,8 @@ function Home() {
       {/* --- LOGO CONTAINER --- */}
       <div className="h-14 w-auto shrink-0 flex items-center bg-white overflow-hidden">
         <img 
-          src="https://pub-1407f82391df4ab1951418d04be76914.r2.dev/uploads/8c7338dc-8987-48b2-b26f-82ea8e223018.jpeg" 
+          // src="https://pub-1407f82391df4ab1951418d04be76914.r2.dev/uploads/8c7338dc-8987-48b2-b26f-82ea8e223018.jpeg" 
+          src="https://active-tan-kvrebd5igo.edgeone.app/logooo.jpeg"
           alt="UniDesk Logo" 
           className="h-full w-auto object-contain object-left" 
         />

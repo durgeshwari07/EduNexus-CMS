@@ -365,7 +365,8 @@ export default function Overview({
                           </div>
                           <div className="flex flex-col">
                             <span className="font-black text-slate-700 text-sm tracking-tight uppercase">
-                              {t.name}
+                              {/* {t.name} */}
+                              {t.name || t.first_name || 'Unknown Faculty'}
                             </span>
                             <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
                               <Clock size={10} /> Needs Review

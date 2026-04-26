@@ -27,11 +27,11 @@ import GatewayView from './ResultManagement/GatewayView';
 import MasterView from './ResultManagement/MasterView';
 
 // --- API CONFIGURATION ---
-// const API_URL = 'http://localhost:5000/api';
-// export const API = axios.create({ baseURL: API_URL });
-
-const API_URL = 'https://edunexus-cms-1.onrender.com/api';
+const API_URL = 'http://localhost:5000/api';
 export const API = axios.create({ baseURL: API_URL });
+
+// const API_URL = 'https://edunexus-cms-1.onrender.com/api';
+// export const API = axios.create({ baseURL: API_URL });
 
 // --- AUTH INTERCEPTOR ---
 API.interceptors.request.use((config) => {
@@ -96,6 +96,7 @@ export default function App() {
     if (userRole === 'admin') {
       setPage('overview');
       navigate('/dashboard');
+      syncData(); 
     } else if (userRole === 'teacher') {
       setPage('faculty-portal'); 
       navigate('/dashboard');
@@ -133,17 +134,31 @@ export default function App() {
           }} />
         } />
 
-        <Route path="/register/teacher" element={
+        {/* <Route path="/register/teacher" element={
           <TeacherRegistration 
             departments={departments} 
             onRegister={async (data) => { 
               try {
                 const res = await API.post('/auth/register-teacher', data); 
                 return res.data.success;
+                // await syncData();
               } catch (err) { return false; }
             }} 
           />
-        } />
+        } /> */}
+
+        <Route path="/register/teacher" element={
+  <TeacherRegistration 
+    departments={departments} 
+    onRegister={async (data) => { 
+      try {
+        const res = await API.post('/auth/register-teacher', data); 
+        return res.data.success; 
+        // Deleted the unreachable syncData() line here!
+      } catch (err) { return false; }
+    }} 
+  />
+} />
 
         {/* PROTECTED DASHBOARD ROUTES */}
         <Route path="/dashboard/*" element={

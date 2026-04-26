@@ -785,7 +785,8 @@ export default function Sidebar({ userRole, currentUser, currentPage, setCurrent
       {/* --- LOGO HEADER (Matches Header Component Height) --- */}
       <div className="h-12 w-full shrink-0  flex items-center bg-white px-8">
         <img 
-          src="https://pub-1407f82391df4ab1951418d04be76914.r2.dev/uploads/8c7338dc-8987-48b2-b26f-82ea8e223018.jpeg" // Replace with your image file path
+          // src="https://pub-1407f82391df4ab1951418d04be76914.r2.dev/uploads/8c7338dc-8987-48b2-b26f-82ea8e223018.jpeg" // Replace with your image file path
+          src="https://active-tan-kvrebd5igo.edgeone.app/logooo.jpeg"
           alt="UniDesk Logo" 
           className="h-full w-full object-contain object-left" 
         />

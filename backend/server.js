@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
+// const db = require('./db');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const nodemailer = require("nodemailer");
@@ -14,7 +15,7 @@ app.use(express.json());
 const JWT_SECRET = process.env.JWT_SECRET || 'unidesk_secret_key_2026';
 const PORT = process.env.PORT || 5000;
 
-// --- 1. DATABASE CONNECTION ---
+// // --- 1. DATABASE CONNECTION ---
 const db = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
@@ -24,6 +25,21 @@ const db = mysql.createPool({
     connectionLimit: 10,
     queueLimit: 0
 });
+
+
+// const db = mysql.createPool({
+//     host: process.env.DB_HOST,
+//     port: process.env.DB_PORT,
+//     user: process.env.DB_USER,
+//     password: process.env.DB_PASSWORD,
+//     database: process.env.DB_NAME,
+//     waitForConnections: true,
+//     connectionLimit: 10,
+//     queueLimit: 0,
+//     ssl: {
+//         rejectUnauthorized: false
+//     }
+// });
 
 // --- 2. EMAIL CONFIGURATION ---
 const transporter = nodemailer.createTransport({
@@ -119,8 +135,19 @@ app.post("/api/auth/request-otp", async (req, res) => {
                    </div>`
         });
         res.json({ success: true, message: "OTP sent", email: userEmail });
-    } catch (err) { res.status(500).json({ success: false, message: "Server error" }); }
-});
+    } 
+    // catch (err) { res.status(500).json({ success: false, message: "Server error" }); 
+// }
+catch (err) { 
+    console.error("❌ LOGIN ERROR:", err);   // 👈 PRINT REAL ERROR
+    res.status(500).json({ 
+        success: false, 
+        message: err.message 
+    }); 
+}
+}
+);
+
 
 app.post("/api/auth/verify-otp", (req, res) => {
     const { email, otp } = req.body;
@@ -214,47 +241,6 @@ app.post('/api/batches', authenticateToken, async (req, res) => {
         if (connection) connection.release();
     }
 });
-
-
-// app.post('/api/batches', authenticateToken, async (req, res) => {
-//     const { dept_id, batch, year, semester, status } = req.body;
-//     const connection = await db.getConnection(); // Use a connection for transactions
-//     try {
-//         await connection.beginTransaction();
-
-//         // 1️⃣ Insert the batch
-//         const [result] = await connection.query(
-//             `INSERT INTO batches (dept_id, batch, year, semester, status) VALUES (?, ?, ?, ?, ?)`,
-//             [dept_id, batch, year || 'Year 1', semester || 1, status || 'Active']
-//         );
-//         const newBatchId = result.insertId;
-
-//         // 2️⃣ Find subjects that match this department and semester
-//         const [subjects] = await connection.query(
-//             `SELECT id FROM subjects WHERE dept_id = ? AND semester = ?`,
-//             [dept_id, semester || 1]
-//         );
-
-//         // 3️⃣ Insert into subject_offerings
-//         if (subjects.length > 0) {
-//             const offeringValues = subjects.map(sub => [sub.id, newBatchId, semester || 1]);
-//             await connection.query(
-//                 `INSERT INTO subject_offerings (subject_id, batch_id, semester) VALUES ?`,
-//                 [offeringValues]
-//             );
-//         }
-
-//         await connection.commit();
-//         res.json({ success: true, message: "Batch created and subjects linked!" });
-//     } catch (err) {
-//         await connection.rollback();
-//         res.status(500).json({ success: false, error: err.message });
-//     } finally {
-//         connection.release();
-//     }
-// });
-
-// UPDATE BATCH (Promotion & Editing)
 
 
 
@@ -362,7 +348,7 @@ app.post('/api/students', authenticateToken, async (req, res) => {
             s.prNo,
             s.email,
             s.phone,
-            batchSemester,   // 🔥 AUTO semester
+            batchSemester,   
             s.division,
             s.academicYear,
             s.dob,
@@ -480,38 +466,15 @@ app.post('/api/assign-teacher', authenticateToken, async (req, res) => {
 
 // --- 7. 📊 DATA & GRADEBOOK ---
 
-// app.get('/api/dashboard/data', authenticateToken, async (req, res) => {
-//     try {
-//         const [depts] = await db.query('SELECT * FROM departments');
-//         const [teachers] = await db.query(`SELECT t.*, CONCAT(t.first_name, ' ', t.last_name) as name, d.name as deptName FROM teachers t LEFT JOIN departments d ON t.dept_id = d.id WHERE t.status = "Active"`);
-//         const [pending] = await db.query(`SELECT t.*, CONCAT(t.first_name, ' ', t.last_name) as name, d.name as deptName FROM teachers t LEFT JOIN departments d ON t.dept_id = d.id WHERE t.status = "Pending"`);
-//         const [students] = await db.query('SELECT * FROM students');
-//         // const [batches] = await db.query(`SELECT b.*, d.id as dept_id FROM batches b LEFT JOIN departments d ON b.dept = d.name`);
-//         const [batches] = await db.query(`SELECT b.*, d.name as deptName FROM batches b LEFT JOIN departments d ON b.dept_id = d.id`);
-//         // const [subjects] = await db.query(`SELECT id, name, code, semester, credits, dept_id as courseId, batchId, type FROM subjects`);
-//         // const [subjects] = await db.query(`SELECT id, name, code, semester, credits, dept_id as courseId, type FROM subjects`);
-//         // Inside app.get('/api/dashboard/data', ...)
-// const [subjects] = await db.query(`
-//     SELECT 
-//         s.*, 
-//         so.batch_id, 
-//         so.semester as offering_semester,
-//         b.batch as batch_name
-//     FROM subjects s
-//     LEFT JOIN subject_offerings so ON s.id = so.subject_id
-//     LEFT JOIN batches b ON so.batch_id = b.id
-// `);
-//         const [assignments] = await db.query(`SELECT ta.*, s.name as subjectName FROM teacher_assignments ta JOIN subjects s ON ta.subjectId = s.id`);
-//         res.json({ departments: depts, teachers, pendingTeachers: pending, students, batches, subjects, teacherAssignments: assignments });
-//     } catch (err) { res.status(500).json({ error: err.message }); }
-// });
+
 
 
 app.get('/api/dashboard/data', authenticateToken, async (req, res) => {
     try {
         const [depts] = await db.query('SELECT * FROM departments');
         const [teachers] = await db.query(`SELECT t.*, CONCAT(t.first_name, ' ', t.last_name) as name, d.name as deptName FROM teachers t LEFT JOIN departments d ON t.dept_id = d.id WHERE t.status = "Active"`);
-        const [pending] = await db.query(`SELECT t.*, CONCAT(t.first_name, ' ', t.last_name) as name, d.name as deptName FROM teachers t LEFT JOIN departments d ON t.dept_id = d.id WHERE t.status = "Pending"`);
+        // const [pending] = await db.query(`SELECT t.*, CONCAT(t.first_name, ' ', t.last_name) as name, d.name as deptName FROM teachers t LEFT JOIN departments d ON t.dept_id = d.id WHERE t.status = "pending"`);
+        const [pending] = await db.query(`SELECT t.*, CONCAT_WS(' ', t.first_name, t.last_name) as name, d.name as deptName FROM teachers t LEFT JOIN departments d ON t.dept_id = d.id WHERE t.status = 'Pending'`);
         const [students] = await db.query('SELECT * FROM students');
         const [batches] = await db.query(`SELECT b.*, d.name as deptName FROM batches b LEFT JOIN departments d ON b.dept_id = d.id`);
 
@@ -931,15 +894,7 @@ app.post('/api/faculty/bulk-save-marks', authenticateToken, async (req, res) => 
     }
 });
 
-// app.get('/api/student-profile/:id', async (req, res) => {
-//     const studentId = req.params.id;
-//     try {
-//         const [profileRows] = await db.query(`SELECT name AS fullName, enrollmentNo AS enrollmentNumber, prNo AS prNumber, email, phone AS phoneNumber, semester, division, academicYear, DATE_FORMAT(dob, '%Y-%m-%d') AS dob, status FROM students WHERE id = ?`, [studentId]);
-//         if (profileRows.length === 0) return res.status(404).json({ error: "No student found" });
-//         const [marksRows] = await db.query(`SELECT s.code AS subjectCode, s.name AS subjectName, m.isa1 AS isaScore, m.theory AS theoryScore, m.practical AS practScore, m.total, m.grade FROM marks m JOIN subjects s ON m.subject_id = s.id WHERE m.student_id = ?`, [studentId]);
-//         res.json({ profile: profileRows[0], marks: marksRows });
-//     } catch (err) { res.status(500).json({ error: err.message }); }
-// });
+
 
 
 
@@ -1151,7 +1106,7 @@ app.get('/api/teacher-workload', async (req, res) => {
     `;
 
     const [rows] = await db.query(sql);   // ✅ FIXED
-    res.json(rows);                       // ✅ SEND ONLY ROWS
+    res.json(rows);                       
 
   } catch (err) {
     console.error("Workload Error:", err);
